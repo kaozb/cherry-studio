@@ -34,6 +34,16 @@ const initialState: LlmState = {
       apiHost: 'https://api.siliconflow.cn',
       models: SYSTEM_MODELS.silicon,
       isSystem: true,
+      enabled: false
+    },
+    {
+      id: 'nsfocus',
+      name: 'nsfocus',
+      type: 'openai',
+      apiKey: 'sk-VGL1D2RuWBdpTnPO8szOqMmolnwyMe1VEt0oSBIbpKX1uHbs',
+      apiHost: 'http://10.66.244.44:12306',
+      models: SYSTEM_MODELS.silicon,
+      isSystem: true,
       enabled: true
     },
     {

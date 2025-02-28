@@ -134,6 +134,17 @@ export const PROVIDER_CONFIG = {
       models: 'https://platform.openai.com/docs/models'
     }
   },
+  nsfocus: {
+    api: {
+      url: 'http://10.66.244.44:12306'
+    },
+    websites: {
+      official: 'http://10.44.3.3/',
+      apiKey: 'http://10.66.244.44:1111/apps',
+      docs: 'http://10.66.244.44:12306/about',
+      models: 'http://10.66.244.44:12306/pricing'
+    }
+  },
   o3: {
     api: {
       url: 'https://api.o3.fan'
