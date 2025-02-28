@@ -1,9 +1,9 @@
-import { useRuntime } from '@renderer/hooks/useRuntime'
 import { Agent } from '@renderer/types'
 import { runAsyncFunction } from '@renderer/utils'
 import { useEffect, useState } from 'react'
 
-let _agents: Agent[] = []
+// let _agents: Agent[] = [] // No longer needed as we fetch fresh each time.
+const AGENTS_URL = 'http://userai.tech.intra.nsfocus.com/static/cherry/agents.json';
 
 export const getAgentsFromSystemAgents = (systemAgents: any) => {
   const agents: Agent[] = []
@@ -17,17 +17,38 @@ export const getAgentsFromSystemAgents = (systemAgents: any) => {
 }
 
 export function useSystemAgents() {
-  const [agents, setAgents] = useState<Agent[]>(_agents)
-  const { resourcesPath } = useRuntime()
+  const [agents, setAgents] = useState<Agent[]>([]); // Initialize with an empty array.
 
   useEffect(() => {
     runAsyncFunction(async () => {
-      if (_agents.length > 0) return
-      const agents = await window.api.fs.read(resourcesPath + '/data/agents.json')
-      _agents = JSON.parse(agents) as Agent[]
-      setAgents(_agents)
-    })
-  }, [resourcesPath])
+      try {
+        const response = await fetch(AGENTS_URL);
 
-  return agents
+        if (!response.ok) {
+          console.error(`Failed to fetch agents from ${AGENTS_URL}. Status: ${response.status}`);
+          // Optionally, set agents to an empty array or a default value if the fetch fails.
+          setAgents([]);
+          return;
+        }
+
+        const data = await response.json();
+        const parsedAgents: Agent[] = data; // Directly cast after parsing.
+
+        // Basic validation to ensure we got an array of agents.
+        if (!Array.isArray(parsedAgents)) {
+          console.error("Invalid data format received from agents.json. Expected an array.");
+          setAgents([]);
+          return;
+        }
+
+        setAgents(parsedAgents);
+      } catch (error) {
+        console.error("Error fetching or parsing agents.json:", error);
+        // Handle the error appropriately, e.g., set a default value or show an error message.
+        setAgents([]);
+      }
+    });
+  }, []); // The effect now only runs once on mount.
+
+  return agents;
 }
