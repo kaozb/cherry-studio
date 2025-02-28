@@ -123,6 +123,17 @@ export function getProviderLogo(providerId: string) {
 }
 
 export const PROVIDER_CONFIG = {
+  nsfocus: {
+    api: {
+      url: 'http://ai2.tech.intra.nsfocus.com'
+    },
+    websites: {
+      official: 'http://userai.tech.intra.nsfocus.com/static/cherry/help.png',
+      apiKey: 'http://doc.tech.intra.nsfocus.com/wikis/26588664-81c4-4363-b5f8-57ffa7d561ae/wYX6/',
+      docs: 'http://doc.tech.intra.nsfocus.com/wikis/26588664-81c4-4363-b5f8-57ffa7d561ae/wYX6/',
+      models: 'http://10.66.244.44:12306/pricing'
+    }
+  },
   openai: {
     api: {
       url: 'https://api.openai.com'
@@ -132,17 +143,6 @@ export const PROVIDER_CONFIG = {
       apiKey: 'https://platform.openai.com/api-keys',
       docs: 'https://platform.openai.com/docs',
       models: 'https://platform.openai.com/docs/models'
-    }
-  },
-  nsfocus: {
-    api: {
-      url: 'http://10.66.244.44:12306'
-    },
-    websites: {
-      official: 'http://10.44.3.3/',
-      apiKey: 'http://10.66.244.44:1111/apps',
-      docs: 'http://10.66.244.44:12306/about',
-      models: 'http://10.66.244.44:12306/pricing'
     }
   },
   o3: {

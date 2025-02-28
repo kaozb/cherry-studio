@@ -110,7 +110,7 @@ const migrateConfig = {
             name: 'nsfocus',
             apiKey: 'sk-VGL1D2RuWBdpTnPO8szOqMmolnwyMe1VEt0oSBIbpKX1uHbs',
             apiHost: 'http://10.66.244.44:12306/v1/',
-            models: SYSTEM_MODELS.openrouter,
+            models: SYSTEM_MODELS.nsfocus,
             isSystem: true
           }
         ]
