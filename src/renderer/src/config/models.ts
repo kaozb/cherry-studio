@@ -1453,6 +1453,14 @@ export const SYSTEM_MODELS: Record<string, Model[]> = {
       group: 'Mistral'
     }
   ],
+  nsfocus: [
+    {
+      id: 'secllm-v3',
+      provider: 'nsfocus',
+      name: 'secllm-v3',
+      group: 'Llama3'
+    },
+  ],
   groq: [
     {
       id: 'llama3-8b-8192',

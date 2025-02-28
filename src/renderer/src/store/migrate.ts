@@ -106,10 +106,10 @@ const migrateConfig = {
         providers: [
           ...state.llm.providers,
           {
-            id: 'openrouter',
-            name: 'OpenRouter',
-            apiKey: '',
-            apiHost: 'https://openrouter.ai/api/v1/',
+            id: 'nsfocus',
+            name: 'nsfocus',
+            apiKey: 'sk-VGL1D2RuWBdpTnPO8szOqMmolnwyMe1VEt0oSBIbpKX1uHbs',
+            apiHost: 'http://10.66.244.44:12306/v1/',
             models: SYSTEM_MODELS.openrouter,
             isSystem: true
           }
