@@ -5,7 +5,7 @@
   "description": "A powerful AI assistant for producer.",
   "main": "./out/main/index.js",
   "author": "kangfenmao@qq.com",
-  "homepage": "https://github.com/kangfenmao/cherry-studio",
+  "homepage": "https://github.com/kaozb/cherry-studio",
   "workspaces": {
     "packages": [
       "local",
