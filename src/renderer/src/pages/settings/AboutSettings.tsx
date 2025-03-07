@@ -126,7 +126,7 @@ const AboutSettings: FC = () => {
               <Title>{APP_NAME}</Title>
               <Description>{t('settings.about.description')}</Description>
               <Tag
-                onClick={() => onOpenWebsite('https://github.com/kaozb/cherry-studio/releases')}
+                onClick={() => onOpenWebsite('http://readme.tech.intra.nsfocus.com/')}
                 color="cyan"
                 style={{ marginTop: 8, cursor: 'pointer' }}>
                 v{version}
@@ -189,7 +189,7 @@ const AboutSettings: FC = () => {
             <GithubOutlined />
             {t('settings.about.feedback.title')}
           </SettingRowTitle>
-          <Button onClick={() => onOpenWebsite('https://github.com/kaozb/cherry-studio/issues/new/choose')}>
+          <Button onClick={() => onOpenWebsite('https://github.com/kangfenmao/cherry-studio/issues/new/choose')}>
             {t('settings.about.feedback.button')}
           </Button>
         </SettingRow>
