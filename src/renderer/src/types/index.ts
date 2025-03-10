@@ -67,6 +67,7 @@ export type Message = {
   askId?: string
   useful?: boolean
   error?: Record<string, any>
+  enabledMCPs?: MCPServer[]
   metadata?: {
     // Gemini
     groundingMetadata?: any
@@ -167,7 +168,7 @@ export interface FileType {
   size: number
   ext: string
   type: FileTypes
-  created_at: Date
+  created_at: string
   count: number
   tokens?: number
 }

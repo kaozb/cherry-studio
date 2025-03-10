@@ -27,7 +27,14 @@ import OpenAI from 'openai'
 
 import { CompletionsParams } from '.'
 import BaseProvider from './BaseProvider'
-import { callMCPTool, geminiFunctionCallToMcpTool, mcpToolsToGeminiTools, upsertMCPToolResponse } from './mcpToolUtils'
+import { filterInvalidTools } from './geminiToolUtils'
+import {
+  callMCPTool,
+  filterMCPTools,
+  geminiFunctionCallToMcpTool,
+  mcpToolsToGeminiTools,
+  upsertMCPToolResponse
+} from './mcpToolUtils'
 
 export default class GeminiProvider extends BaseProvider {
   private sdk: GoogleGenerativeAI
@@ -161,7 +168,7 @@ export default class GeminiProvider extends BaseProvider {
     for (const message of userMessages) {
       history.push(await this.getMessageContents(message))
     }
-
+    mcpTools = filterMCPTools(mcpTools, userLastMessage?.enabledMCPs)
     const tools = mcpToolsToGeminiTools(mcpTools)
     const toolResponses: MCPToolResponse[] = []
     if (assistant.enableWebSearch && isWebSearchModel(model)) {
@@ -175,7 +182,6 @@ export default class GeminiProvider extends BaseProvider {
       {
         model: model.id,
         systemInstruction: assistant.prompt,
-        tools: tools.length > 0 ? tools : undefined,
         safetySettings: this.getSafetySettings(model.id),
         generationConfig: {
           maxOutputTokens: maxTokens,
@@ -186,6 +192,10 @@ export default class GeminiProvider extends BaseProvider {
       },
       this.requestOptions
     )
+    const filteredTools = filterInvalidTools(geminiModel.tools)
+    if (!isEmpty(filteredTools)) {
+      geminiModel.tools = filteredTools
+    }
 
     const chat = geminiModel.startChat({ history })
     const messageContents = await this.getMessageContents(userLastMessage!)

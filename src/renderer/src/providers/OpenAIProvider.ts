@@ -35,7 +35,13 @@ import {
 
 import { CompletionsParams } from '.'
 import BaseProvider from './BaseProvider'
-import { callMCPTool, mcpToolsToOpenAITools, openAIToolsToMcpTool, upsertMCPToolResponse } from './mcpToolUtils'
+import {
+  callMCPTool,
+  filterMCPTools,
+  mcpToolsToOpenAITools,
+  openAIToolsToMcpTool,
+  upsertMCPToolResponse
+} from './mcpToolUtils'
 
 type ReasoningEffort = 'high' | 'medium' | 'low'
 
@@ -298,6 +304,7 @@ export default class OpenAIProvider extends BaseProvider {
     const { abortController, cleanup } = this.createAbortController(lastUserMessage?.id)
     const { signal } = abortController
 
+    mcpTools = filterMCPTools(mcpTools, lastUserMessage?.enabledMCPs)
     const tools = mcpTools && mcpTools.length > 0 ? mcpToolsToOpenAITools(mcpTools) : undefined
 
     const reqMessages: ChatCompletionMessageParam[] = [systemMessage, ...userMessages].filter(
@@ -378,30 +385,19 @@ export default class OpenAIProvider extends BaseProvider {
               continue
             }
 
-            upsertMCPToolResponse(
-              toolResponses,
-              {
-                tool: mcpTool,
-                status: 'invoking'
-              },
-              onChunk
-            )
+            upsertMCPToolResponse(toolResponses, { tool: mcpTool, status: 'invoking' }, onChunk)
+
             const toolCallResponse = await callMCPTool(mcpTool)
-            console.log(toolCallResponse)
+
+            console.log('[OpenAIProvider] toolCallResponse', toolCallResponse)
+
             reqMessages.push({
               role: 'tool',
               content: toolCallResponse.content,
               tool_call_id: toolCall.id
             } as ChatCompletionToolMessageParam)
-            upsertMCPToolResponse(
-              toolResponses,
-              {
-                tool: mcpTool,
-                status: 'done',
-                response: toolCallResponse
-              },
-              onChunk
-            )
+
+            upsertMCPToolResponse(toolResponses, { tool: mcpTool, status: 'done', response: toolCallResponse }, onChunk)
           }
 
           const newStream = await this.sdk.chat.completions
