@@ -10,7 +10,11 @@ import { getStoreSetting } from '@renderer/hooks/useSettings'
 import i18n from '@renderer/i18n'
 import { getAssistantSettings, getDefaultModel, getTopNamingModel } from '@renderer/services/AssistantService'
 import { EVENT_NAMES } from '@renderer/services/EventService'
-import { filterContextMessages, filterUserRoleStartMessages } from '@renderer/services/MessagesService'
+import {
+  filterContextMessages,
+  filterEmptyMessages,
+  filterUserRoleStartMessages
+} from '@renderer/services/MessagesService'
 import {
   Assistant,
   FileTypes,
@@ -21,7 +25,14 @@ import {
   Provider,
   Suggestion
 } from '@renderer/types'
-import { removeSpecialCharacters } from '@renderer/utils'
+import { removeSpecialCharactersForTopicName } from '@renderer/utils'
+import {
+  callMCPTool,
+  filterMCPTools,
+  mcpToolsToOpenAITools,
+  openAIToolsToMcpTool,
+  upsertMCPToolResponse
+} from '@renderer/utils/mcp-tools'
 import { takeRight } from 'lodash'
 import OpenAI, { AzureOpenAI } from 'openai'
 import {
@@ -35,7 +46,6 @@ import {
 
 import { CompletionsParams } from '.'
 import BaseProvider from './BaseProvider'
-import { callMCPTool, mcpToolsToOpenAITools, openAIToolsToMcpTool, upsertMCPToolResponse } from './mcpToolUtils'
 
 type ReasoningEffort = 'high' | 'medium' | 'low'
 
@@ -242,7 +252,10 @@ export default class OpenAIProvider extends BaseProvider {
 
     const userMessages: ChatCompletionMessageParam[] = []
 
-    const _messages = filterUserRoleStartMessages(filterContextMessages(takeRight(messages, contextCount + 1)))
+    const _messages = filterUserRoleStartMessages(
+      filterContextMessages(filterEmptyMessages(takeRight(messages, contextCount + 1)))
+    )
+
     onFilterMessages(_messages)
 
     for (const message of _messages) {
@@ -298,6 +311,7 @@ export default class OpenAIProvider extends BaseProvider {
     const { abortController, cleanup } = this.createAbortController(lastUserMessage?.id)
     const { signal } = abortController
 
+    mcpTools = filterMCPTools(mcpTools, lastUserMessage?.enabledMCPs)
     const tools = mcpTools && mcpTools.length > 0 ? mcpToolsToOpenAITools(mcpTools) : undefined
 
     const reqMessages: ChatCompletionMessageParam[] = [systemMessage, ...userMessages].filter(
@@ -378,30 +392,19 @@ export default class OpenAIProvider extends BaseProvider {
               continue
             }
 
-            upsertMCPToolResponse(
-              toolResponses,
-              {
-                tool: mcpTool,
-                status: 'invoking'
-              },
-              onChunk
-            )
+            upsertMCPToolResponse(toolResponses, { tool: mcpTool, status: 'invoking' }, onChunk)
+
             const toolCallResponse = await callMCPTool(mcpTool)
-            console.log(toolCallResponse)
+
+            console.log('[OpenAIProvider] toolCallResponse', toolCallResponse)
+
             reqMessages.push({
               role: 'tool',
               content: toolCallResponse.content,
               tool_call_id: toolCall.id
             } as ChatCompletionToolMessageParam)
-            upsertMCPToolResponse(
-              toolResponses,
-              {
-                tool: mcpTool,
-                status: 'done',
-                response: toolCallResponse
-              },
-              onChunk
-            )
+
+            upsertMCPToolResponse(toolResponses, { tool: mcpTool, status: 'done', response: toolCallResponse }, onChunk)
           }
 
           const newStream = await this.sdk.chat.completions
@@ -425,7 +428,6 @@ export default class OpenAIProvider extends BaseProvider {
                 signal
               }
             )
-            .finally(cleanup)
           await processStream(newStream)
         }
 
@@ -466,9 +468,8 @@ export default class OpenAIProvider extends BaseProvider {
           signal
         }
       )
-      .finally(cleanup)
 
-    await processStream(stream)
+    await processStream(stream).finally(cleanup)
   }
 
   async translate(message: Message, assistant: Assistant, onResponse?: (text: string) => void) {
@@ -579,7 +580,7 @@ export default class OpenAIProvider extends BaseProvider {
     let content = response.choices[0].message?.content || ''
     content = content.replace(/^<think>(.*?)<\/think>/s, '')
 
-    return removeSpecialCharacters(content.substring(0, 50))
+    return removeSpecialCharactersForTopicName(content.substring(0, 50))
   }
 
   public async generateText({ prompt, content }: { prompt: string; content: string }): Promise<string> {
