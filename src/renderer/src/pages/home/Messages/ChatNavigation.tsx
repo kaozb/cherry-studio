@@ -1,6 +1,7 @@
 import { DownOutlined, UpOutlined } from '@ant-design/icons'
+import { useSettings } from '@renderer/hooks/useSettings'
 import { Button, Tooltip } from 'antd'
-import { FC, useCallback, useEffect, useMemo, useState } from 'react'
+import { FC, useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import styled from 'styled-components'
 
@@ -12,8 +13,9 @@ const ChatNavigation: FC<ChatNavigationProps> = ({ containerId }) => {
   const { t } = useTranslation()
   const [isVisible, setIsVisible] = useState(false)
   const [hideTimer, setHideTimer] = useState<NodeJS.Timeout | null>(null)
-
-  const container = useMemo(() => document.getElementById(containerId), [containerId])
+  const { topicPosition, showTopics } = useSettings()
+  const showRightTopics = topicPosition === 'right' && showTopics
+  const right = showRightTopics ? 'calc(var(--topic-list-width) + 16px)' : '16px'
 
   const resetHideTimer = useCallback(() => {
     if (hideTimer) {
@@ -27,6 +29,7 @@ const ChatNavigation: FC<ChatNavigationProps> = ({ containerId }) => {
   }, [hideTimer])
 
   const findUserMessages = () => {
+    const container = document.getElementById(containerId)
     if (!container) return []
 
     const userMessages = Array.from(container.getElementsByClassName('message-user'))
@@ -34,6 +37,8 @@ const ChatNavigation: FC<ChatNavigationProps> = ({ containerId }) => {
   }
 
   const findAssistantMessages = () => {
+    const container = document.getElementById(containerId)
+
     if (!container) return []
 
     const assistantMessages = Array.from(container.getElementsByClassName('message-assistant'))
@@ -45,18 +50,20 @@ const ChatNavigation: FC<ChatNavigationProps> = ({ containerId }) => {
   }
 
   const scrollToTop = () => {
-    if (!container) return
-    container.scrollTo({ top: 0, behavior: 'smooth' })
+    const container = document.getElementById(containerId)
+    container && container.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const scrollToBottom = () => {
-    if (!container) return
-    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' })
+    const container = document.getElementById(containerId)
+    container && container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' })
   }
 
   const getCurrentVisibleIndex = (direction: 'up' | 'down') => {
     const userMessages = findUserMessages()
     const assistantMessages = findAssistantMessages()
+    const container = document.getElementById(containerId)
+
     if (!container) return -1
 
     const containerRect = container.getBoundingClientRect()
@@ -101,21 +108,21 @@ const ChatNavigation: FC<ChatNavigationProps> = ({ containerId }) => {
     const assistantMessages = findAssistantMessages()
 
     if (userMessages.length === 0 && assistantMessages.length === 0) {
-      window.message.info({ content: t('chat.navigation.last'), key: 'navigation-info' })
+      // window.message.info({ content: t('chat.navigation.last'), key: 'navigation-info' })
       return scrollToBottom()
     }
 
     const visibleIndex = getCurrentVisibleIndex('down')
 
     if (visibleIndex === -1) {
-      window.message.info({ content: t('chat.navigation.last'), key: 'navigation-info' })
+      // window.message.info({ content: t('chat.navigation.last'), key: 'navigation-info' })
       return scrollToBottom()
     }
 
     const targetIndex = visibleIndex - 1
 
     if (targetIndex < 0) {
-      window.message.info({ content: t('chat.navigation.last'), key: 'navigation-info' })
+      // window.message.info({ content: t('chat.navigation.last'), key: 'navigation-info' })
       return scrollToBottom()
     }
 
@@ -127,21 +134,21 @@ const ChatNavigation: FC<ChatNavigationProps> = ({ containerId }) => {
     const userMessages = findUserMessages()
     const assistantMessages = findAssistantMessages()
     if (userMessages.length === 0 && assistantMessages.length === 0) {
-      window.message.info({ content: t('chat.navigation.first'), key: 'navigation-info' })
+      // window.message.info({ content: t('chat.navigation.first'), key: 'navigation-info' })
       return scrollToTop()
     }
 
     const visibleIndex = getCurrentVisibleIndex('up')
 
     if (visibleIndex === -1) {
-      window.message.info({ content: t('chat.navigation.first'), key: 'navigation-info' })
+      // window.message.info({ content: t('chat.navigation.first'), key: 'navigation-info' })
       return scrollToTop()
     }
 
     const targetIndex = visibleIndex + 1
 
     if (targetIndex >= userMessages.length) {
-      window.message.info({ content: t('chat.navigation.first'), key: 'navigation-info' })
+      // window.message.info({ content: t('chat.navigation.first'), key: 'navigation-info' })
       return scrollToTop()
     }
 
@@ -168,8 +175,8 @@ const ChatNavigation: FC<ChatNavigationProps> = ({ containerId }) => {
 
   return (
     <>
-      <TriggerArea onMouseEnter={() => setIsVisible(true)} onMouseLeave={() => resetHideTimer()} />
-      <NavigationContainer $isVisible={isVisible}>
+      <TriggerArea $right={right} onMouseEnter={() => setIsVisible(true)} onMouseLeave={() => resetHideTimer()} />
+      <NavigationContainer $isVisible={isVisible} $right={right}>
         <ButtonGroup>
           <Tooltip title={t('chat.navigation.prev')} placement="left">
             <NavigationButton
@@ -196,23 +203,23 @@ const ChatNavigation: FC<ChatNavigationProps> = ({ containerId }) => {
   )
 }
 
-const TriggerArea = styled.div`
+const TriggerArea = styled.div<{ $right: string }>`
   position: fixed;
-  right: 0;
+  right: ${(props) => props.$right};
   top: 40%;
   width: 20px;
   height: 20%;
   z-index: 998;
-  background: transparent;
 `
 
 interface NavigationContainerProps {
   $isVisible: boolean
+  $right: string
 }
 
 const NavigationContainer = styled.div<NavigationContainerProps>`
   position: fixed;
-  right: 16px;
+  right: ${(props) => props.$right};
   top: 50%;
   transform: translateY(-50%) translateX(${(props) => (props.$isVisible ? 0 : '100%')});
   z-index: 999;

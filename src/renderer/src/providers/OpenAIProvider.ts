@@ -33,7 +33,7 @@ import {
   openAIToolsToMcpTool,
   upsertMCPToolResponse
 } from '@renderer/utils/mcp-tools'
-import { takeRight } from 'lodash'
+import { isString, takeRight } from 'lodash'
 import OpenAI, { AzureOpenAI } from 'openai'
 import {
   ChatCompletionAssistantMessageParam,
@@ -166,7 +166,7 @@ export default class OpenAIProvider extends BaseProvider {
       }
     }
 
-    if (this.isOpenAIo1(model)) {
+    if (this.isOpenAIReasoning(model)) {
       return {
         max_tokens: undefined,
         max_completion_tokens: maxTokens
@@ -232,8 +232,8 @@ export default class OpenAIProvider extends BaseProvider {
     return {}
   }
 
-  private isOpenAIo1(model: Model) {
-    return model.id.startsWith('o1')
+  private isOpenAIReasoning(model: Model) {
+    return model.id.startsWith('o1') || model.id.startsWith('o3')
   }
 
   async completions({ messages, assistant, onChunk, onFilterMessages, mcpTools }: CompletionsParams): Promise<void> {
@@ -262,10 +262,10 @@ export default class OpenAIProvider extends BaseProvider {
       userMessages.push(await this.getMessageParam(message, model))
     }
 
-    const isOpenAIo1 = this.isOpenAIo1(model)
+    const isOpenAIReasoning = this.isOpenAIReasoning(model)
 
     const isSupportStreamOutput = () => {
-      if (isOpenAIo1) {
+      if (isOpenAIReasoning) {
         return false
       }
       return streamOutput
@@ -400,7 +400,9 @@ export default class OpenAIProvider extends BaseProvider {
 
             reqMessages.push({
               role: 'tool',
-              content: toolCallResponse.content,
+              content: isString(toolCallResponse.content)
+                ? toolCallResponse.content
+                : JSON.stringify(toolCallResponse.content),
               tool_call_id: toolCall.id
             } as ChatCompletionToolMessageParam)
 
@@ -482,13 +484,13 @@ export default class OpenAIProvider extends BaseProvider {
         ]
       : [{ role: 'user', content: assistant.prompt }]
 
-    const isOpenAIo1 = this.isOpenAIo1(model)
+    const isOpenAIReasoning = this.isOpenAIReasoning(model)
 
     const isSupportedStreamOutput = () => {
       if (!onResponse) {
         return false
       }
-      if (isOpenAIo1) {
+      if (isOpenAIReasoning) {
         return false
       }
       return true

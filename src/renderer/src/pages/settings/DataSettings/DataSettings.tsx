@@ -1,4 +1,12 @@
-import { FileSearchOutlined, FolderOpenOutlined, SaveOutlined } from '@ant-design/icons'
+import {
+  CloudSyncOutlined,
+  DatabaseOutlined,
+  FileMarkdownOutlined,
+  FileSearchOutlined,
+  FolderOpenOutlined,
+  SaveOutlined,
+  YuqueOutlined
+} from '@ant-design/icons'
 import { HStack } from '@renderer/components/Layout'
 import ListItem from '@renderer/components/ListItem'
 import BackupPopup from '@renderer/components/Popups/BackupPopup'
@@ -8,7 +16,7 @@ import { useKnowledgeFiles } from '@renderer/hooks/useKnowledgeFiles'
 import { reset } from '@renderer/services/BackupService'
 import { AppInfo } from '@renderer/types'
 import { formatFileSize } from '@renderer/utils'
-import { Button, Modal, Typography } from 'antd'
+import { Button, Typography } from 'antd'
 import { FC, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import styled from 'styled-components'
@@ -27,11 +35,15 @@ const DataSettings: FC = () => {
   const [menu, setMenu] = useState<string>('data')
 
   const menuItems = [
-    { key: 'data', title: 'settings.data.data.title' },
-    { key: 'webdav', title: 'settings.data.webdav.title' },
-    { key: 'markdown_export', title: 'settings.data.markdown_export.title' },
-    { key: 'notion', title: 'settings.data.notion.title' },
-    { key: 'yuque', title: 'settings.data.yuque.title' }
+    { key: 'data', title: 'settings.data.data.title', icon: <DatabaseOutlined style={{ fontSize: 16 }} /> },
+    { key: 'webdav', title: 'settings.data.webdav.title', icon: <CloudSyncOutlined style={{ fontSize: 16 }} /> },
+    {
+      key: 'markdown_export',
+      title: 'settings.data.markdown_export.title',
+      icon: <FileMarkdownOutlined style={{ fontSize: 16 }} />
+    },
+    { key: 'notion', title: 'settings.data.notion.title', icon: <i className="iconfont icon-notion" /> },
+    { key: 'yuque', title: 'settings.data.yuque.title', icon: <YuqueOutlined style={{ fontSize: 16 }} /> }
   ]
 
   useEffect(() => {
@@ -49,7 +61,7 @@ const DataSettings: FC = () => {
   }
 
   const handleClearCache = () => {
-    Modal.confirm({
+    window.modal.confirm({
       title: t('settings.data.clear_cache.title'),
       content: t('settings.data.clear_cache.confirm'),
       okText: t('settings.data.clear_cache.button'),
@@ -69,7 +81,7 @@ const DataSettings: FC = () => {
   }
 
   const handleRemoveAllFiles = () => {
-    Modal.confirm({
+    window.modal.confirm({
       centered: true,
       title: t('settings.data.app_knowledge.remove_all') + ` (${formatFileSize(size)}) `,
       content: t('settings.data.app_knowledge.remove_all_confirm'),
@@ -88,7 +100,14 @@ const DataSettings: FC = () => {
     <Container>
       <MenuList>
         {menuItems.map((item) => (
-          <ListItem key={item.key} title={t(item.title)} active={menu === item.key} onClick={() => setMenu(item.key)} />
+          <ListItem
+            key={item.key}
+            title={t(item.title)}
+            active={menu === item.key}
+            onClick={() => setMenu(item.key)}
+            titleStyle={{ fontWeight: 500 }}
+            icon={item.icon}
+          />
         ))}
       </MenuList>
       <SettingContainer theme={theme} style={{ display: 'flex', flex: 1 }}>
@@ -183,7 +202,7 @@ const StyledIcon = styled(FileSearchOutlined)`
 const MenuList = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 5px;
   width: var(--settings-width);
   padding: 12px;
   border-right: 0.5px solid var(--color-border);

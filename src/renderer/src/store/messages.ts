@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSelector, createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import db from '@renderer/databases'
-import { TopicManager } from '@renderer/hooks/useTopic'
+import { autoRenameTopic, TopicManager } from '@renderer/hooks/useTopic'
 import { fetchChatCompletion } from '@renderer/services/ApiService'
 import { EVENT_NAMES, EventEmitter } from '@renderer/services/EventService'
 import { getAssistantMessage, resetAssistantMessage } from '@renderer/services/MessagesService'
@@ -190,35 +190,28 @@ const messagesSlice = createSlice({
   // }
 })
 
-export const {
-  setTopicLoading,
-  setError,
-  setDisplayCount,
-  addMessage,
-  updateMessage,
-  setCurrentTopic,
-  clearTopicMessages,
-  loadTopicMessages,
-  setStreamMessage,
-  commitStreamMessage,
-  clearStreamMessage
-} = messagesSlice.actions
-
-const handleResponseMessageUpdate = (message, topicId, dispatch) => {
-  // When message is complete, commit to messages and sync with DB
-  // if (message.status !== 'pending') {
-  //   if (message.status === 'success') {
-  //     EventEmitter.emit(EVENT_NAMES.AI_AUTO_RENAME)
-  //   }
-  //   if (message.status !== 'sending') {
-  //     dispatch(commitStreamMessage({ topicId, messageId: message.id }))
-  //     const state = getState()
-  //     const topicMessages = state.messages.messagesByTopic[topicId]
-  //     if (topicMessages) {
-  //       syncMessagesWithDB(topicId, topicMessages)
-  //     }
-  //   }
-  // }
+const handleResponseMessageUpdate = (
+  assistant: Assistant,
+  message: Message,
+  topicId: string,
+  dispatch: AppDispatch,
+  getState: () => RootState
+) => {
+  dispatch(setStreamMessage({ topicId, message }))
+  if (message.status !== 'pending') {
+    // When message is complete, commit to messages and sync with DB
+    if (message.status === 'success') {
+      autoRenameTopic(assistant, topicId)
+    }
+    if (message.status !== 'sending') {
+      dispatch(commitStreamMessage({ topicId, messageId: message.id }))
+      const state = getState()
+      const topicMessages = state.messages.messagesByTopic[topicId]
+      if (topicMessages) {
+        syncMessagesWithDB(topicId, topicMessages)
+      }
+    }
+  }
 }
 
 // Helper function to sync messages with database
@@ -326,46 +319,31 @@ export const sendMessage =
             }
 
             // 节流
-            const throttledDispatch = throttle(
-              (topicId, message) => dispatch(setStreamMessage({ topicId, message })),
-              100,
-              { trailing: true }
-            ) // 100ms的节流时间应足够平衡用户体验和性能
+            const throttledDispatch = throttle(handleResponseMessageUpdate, 100, { trailing: true }) // 100ms的节流时间应足够平衡用户体验和性能
 
-            let resultMessage: Message = { ...assistantMessage }
-
+            const messageIndex = messages.findIndex((m) => m.id === assistantMessage.id)
             await fetchChatCompletion({
               message: { ...assistantMessage },
               messages: messages
                 .filter((m) => !m.status?.includes('ing'))
-                .slice(
-                  0,
-                  messages.findIndex((m) => m.id === assistantMessage.id)
-                ),
+                .slice(0, messageIndex !== -1 ? messageIndex : undefined),
               assistant: assistantWithModel,
               onResponse: async (msg) => {
                 // 允许在回调外维护一个最新的消息状态，每次都更新这个对象，但只通过节流函数分发到Redux
                 const updateMessage = { ...msg, status: msg.status || 'pending', content: msg.content || '' }
-                resultMessage = {
-                  ...assistantMessage,
-                  ...updateMessage
-                }
-                // 创建节流函数，限制Redux更新频率
                 // 使用节流函数更新Redux
-                throttledDispatch(topic.id, resultMessage)
+                throttledDispatch(
+                  assistant,
+                  {
+                    ...assistantMessage,
+                    ...updateMessage
+                  },
+                  topic.id,
+                  dispatch,
+                  getState
+                )
               }
             })
-            if (resultMessage?.status === 'success') {
-              EventEmitter.emit(EVENT_NAMES.AI_AUTO_RENAME)
-            }
-            if (resultMessage?.status !== 'sending') {
-              dispatch(commitStreamMessage({ topicId: topic.id, messageId: assistantMessage.id }))
-              const state = getState()
-              const topicMessages = state.messages.messagesByTopic[topic.id]
-              if (topicMessages) {
-                syncMessagesWithDB(topic.id, topicMessages)
-              }
-            }
           } catch (error: any) {
             console.error('Error in chat completion:', error)
             dispatch(
@@ -525,5 +503,19 @@ export const selectStreamMessage = (state: RootState, topicId: string, messageId
   const messagesState = state.messages as MessagesState
   return messagesState.streamMessagesByTopic[topicId]?.[messageId] || null
 }
+
+export const {
+  setTopicLoading,
+  setError,
+  setDisplayCount,
+  addMessage,
+  updateMessage,
+  setCurrentTopic,
+  clearTopicMessages,
+  loadTopicMessages,
+  setStreamMessage,
+  commitStreamMessage,
+  clearStreamMessage
+} = messagesSlice.actions
 
 export default messagesSlice.reducer
