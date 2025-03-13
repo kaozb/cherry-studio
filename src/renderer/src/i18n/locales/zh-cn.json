@@ -568,6 +568,7 @@
     },
     "provider": {
       "aihubmix": "AiHubMix",
+      "nsfocus": "nsfocus",
       "anthropic": "Anthropic",
       "azure-openai": "Azure OpenAI",
       "baichuan": "百川",
