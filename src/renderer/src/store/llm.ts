@@ -11,6 +11,9 @@ type LlmSettings = {
   lmstudio: {
     keepAliveTime: number
   }
+  gpustack: {
+    keepAliveTime: number
+  }
 }
 
 export interface LlmState {
@@ -34,7 +37,7 @@ const initialState: LlmState = {
       apiHost: 'http://ai2.tech.intra.nsfocus.com',
       models: SYSTEM_MODELS.nsfocus,
       isSystem: true,
-      enabled: true
+      enabled: false
     },
     {
       id: 'silicon',
@@ -43,16 +46,6 @@ const initialState: LlmState = {
       apiKey: '',
       apiHost: 'https://api.siliconflow.cn',
       models: SYSTEM_MODELS.silicon,
-      isSystem: true,
-      enabled: false
-    },
-    {
-      id: 'o3',
-      name: 'O3',
-      type: 'openai',
-      apiKey: '',
-      apiHost: 'https://api.o3.fan',
-      models: SYSTEM_MODELS.o3,
       isSystem: true,
       enabled: false
     },
@@ -67,12 +60,12 @@ const initialState: LlmState = {
       enabled: false
     },
     {
-      id: 'deepseek',
-      name: 'deepseek',
+      id: 'o3',
+      name: 'O3',
       type: 'openai',
       apiKey: '',
-      apiHost: 'https://api.deepseek.com',
-      models: SYSTEM_MODELS.deepseek,
+      apiHost: 'https://api.o3.fan',
+      models: SYSTEM_MODELS.o3,
       isSystem: true,
       enabled: false
     },
@@ -87,12 +80,22 @@ const initialState: LlmState = {
       enabled: false
     },
     {
-      id: 'baidu-cloud',
-      name: 'Baidu Cloud',
+      id: 'openrouter',
+      name: 'OpenRouter',
       type: 'openai',
       apiKey: '',
-      apiHost: 'https://qianfan.baidubce.com/v2/',
-      models: SYSTEM_MODELS['baidu-cloud'],
+      apiHost: 'https://openrouter.ai/api/v1/',
+      models: SYSTEM_MODELS.openrouter,
+      isSystem: true,
+      enabled: false
+    },
+    {
+      id: 'deepseek',
+      name: 'deepseek',
+      type: 'openai',
+      apiKey: '',
+      apiHost: 'https://api.deepseek.com',
+      models: SYSTEM_MODELS.deepseek,
       isSystem: true,
       enabled: false
     },
@@ -113,6 +116,36 @@ const initialState: LlmState = {
       apiKey: '',
       apiHost: 'http://localhost:1234',
       models: SYSTEM_MODELS.lmstudio,
+      isSystem: true,
+      enabled: false
+    },
+    {
+      id: 'ppio',
+      name: 'PPIO',
+      type: 'openai',
+      apiKey: '',
+      apiHost: 'https://api.ppinfra.com/v3/openai',
+      models: SYSTEM_MODELS.ppio,
+      isSystem: true,
+      enabled: false
+    },
+    {
+      id: 'infini',
+      name: 'Infini',
+      type: 'openai',
+      apiKey: '',
+      apiHost: 'https://cloud.infini-ai.com/maas',
+      models: SYSTEM_MODELS.infini,
+      isSystem: true,
+      enabled: false
+    },
+    {
+      id: 'baidu-cloud',
+      name: 'Baidu Cloud',
+      type: 'openai',
+      apiKey: '',
+      apiHost: 'https://qianfan.baidubce.com/v2/',
+      models: SYSTEM_MODELS['baidu-cloud'],
       isSystem: true,
       enabled: false
     },
@@ -258,16 +291,6 @@ const initialState: LlmState = {
       enabled: false
     },
     {
-      id: 'openrouter',
-      name: 'OpenRouter',
-      type: 'openai',
-      apiKey: '',
-      apiHost: 'https://openrouter.ai/api/v1/',
-      models: SYSTEM_MODELS.openrouter,
-      isSystem: true,
-      enabled: false
-    },
-    {
       id: 'groq',
       name: 'Groq',
       type: 'openai',
@@ -378,32 +401,12 @@ const initialState: LlmState = {
       enabled: false
     },
     {
-      id: 'ppio',
-      name: 'PPIO',
-      type: 'openai',
-      apiKey: '',
-      apiHost: 'https://api.ppinfra.com/v3/openai',
-      models: SYSTEM_MODELS.ppio,
-      isSystem: true,
-      enabled: false
-    },
-    {
       id: 'perplexity',
       name: 'Perplexity',
       type: 'openai',
       apiKey: '',
       apiHost: 'https://api.perplexity.ai/',
       models: SYSTEM_MODELS.perplexity,
-      isSystem: true,
-      enabled: false
-    },
-    {
-      id: 'infini',
-      name: 'Infini',
-      type: 'openai',
-      apiKey: '',
-      apiHost: 'https://cloud.infini-ai.com/maas',
-      models: SYSTEM_MODELS.infini,
       isSystem: true,
       enabled: false
     },
@@ -436,6 +439,16 @@ const initialState: LlmState = {
       models: SYSTEM_MODELS['tencent-cloud-ti'],
       isSystem: true,
       enabled: false
+    },
+    {
+      id: 'gpustack',
+      name: 'GPUStack',
+      type: 'openai',
+      apiKey: '',
+      apiHost: '',
+      models: SYSTEM_MODELS.gpustack,
+      isSystem: true,
+      enabled: false
     }
   ],
   settings: {
@@ -443,6 +456,9 @@ const initialState: LlmState = {
       keepAliveTime: 0
     },
     lmstudio: {
+      keepAliveTime: 0
+    },
+    gpustack: {
       keepAliveTime: 0
     }
   }
@@ -472,9 +488,23 @@ const getIntegratedInitialState = () => {
       },
       lmstudio: {
         keepAliveTime: 3600
+      },
+      gpustack: {
+        keepAliveTime: 3600
       }
     }
   } as LlmState
+}
+
+export const moveProvider = (providers: Provider[], id: string, position: number) => {
+  const index = providers.findIndex((p) => p.id === id)
+  if (index === -1) return providers
+
+  const provider = providers[index]
+  const newProviders = [...providers]
+  newProviders.splice(index, 1)
+  newProviders.splice(position - 1, 0, provider)
+  return newProviders
 }
 
 const settingsSlice = createSlice({
@@ -533,6 +563,9 @@ const settingsSlice = createSlice({
     setLMStudioKeepAliveTime: (state, action: PayloadAction<number>) => {
       state.settings.lmstudio.keepAliveTime = action.payload
     },
+    setGPUStackKeepAliveTime: (state, action: PayloadAction<number>) => {
+      state.settings.gpustack.keepAliveTime = action.payload
+    },
     updateModel: (
       state,
       action: PayloadAction<{
@@ -563,6 +596,7 @@ export const {
   setTranslateModel,
   setOllamaKeepAliveTime,
   setLMStudioKeepAliveTime,
+  setGPUStackKeepAliveTime,
   updateModel
 } = settingsSlice.actions
 
