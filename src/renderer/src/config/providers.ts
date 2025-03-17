@@ -90,6 +90,9 @@ const PROVIDER_LOGO_MAP = {
   alayanew: AlayaNewProviderLogo
 } as const
 
+export function getProviderLogo(providerId: string) {
+  return PROVIDER_LOGO_MAP[providerId as keyof typeof PROVIDER_LOGO_MAP]
+}
 
 export const PROVIDER_CONFIG = {
   nsfocus: {
