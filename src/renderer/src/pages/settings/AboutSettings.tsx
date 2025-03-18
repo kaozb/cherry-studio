@@ -109,7 +109,9 @@ const AboutSettings: FC = () => {
         <SettingDivider />
         <AboutHeader>
           <Row align="middle">
+
             <AvatarWrapper onClick={() => onOpenWebsite('https://github.com/kaozb/cherry-studio')}>
+
               {update.downloadProgress > 0 && (
                 <ProgressCircle
                   type="circle"
