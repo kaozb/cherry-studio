@@ -66,9 +66,11 @@ export interface SettingsState {
     disabled: SidebarIcon[]
   }
   narrowMode: boolean
+  // QuickAssistant
   enableQuickAssistant: boolean
   clickTrayToShowQuickAssistant: boolean
   multiModelMessageStyle: MultiModelMessageStyle
+  readClipboardAtStartup: boolean
   notionDatabaseID: string | null
   notionApiKey: string | null
   notionPageNameKey: string | null
@@ -136,6 +138,7 @@ const initialState: SettingsState = {
   enableQuickAssistant: false,
   clickTrayToShowQuickAssistant: false,
   multiModelMessageStyle: 'horizontal',
+  readClipboardAtStartup: true,
   notionDatabaseID: '',
   notionApiKey: '',
   notionPageNameKey: 'Name',
@@ -304,6 +307,9 @@ const settingsSlice = createSlice({
     setEnableQuickAssistant: (state, action: PayloadAction<boolean>) => {
       state.enableQuickAssistant = action.payload
     },
+    setReadClipboardAtStartup: (state, action: PayloadAction<boolean>) => {
+      state.readClipboardAtStartup = action.payload
+    },
     setMultiModelMessageStyle: (state, action: PayloadAction<'horizontal' | 'vertical' | 'fold' | 'grid'>) => {
       state.multiModelMessageStyle = action.payload
     },
@@ -395,6 +401,7 @@ export const {
   setNarrowMode,
   setClickTrayToShowQuickAssistant,
   setEnableQuickAssistant,
+  setReadClipboardAtStartup,
   setMultiModelMessageStyle,
   setNotionDatabaseID,
   setNotionApiKey,
