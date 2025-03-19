@@ -27,7 +27,7 @@ export interface LlmState {
 const initialState: LlmState = {
   defaultModel: SYSTEM_MODELS.nsfocus[0],
   topicNamingModel: SYSTEM_MODELS.nsfocus[0],
-  translateModel: SYSTEM_MODELS.silicon[3],
+  translateModel: SYSTEM_MODELS.silicon[0],
   providers: [
     {
       id: 'nsfocus',
@@ -37,7 +37,7 @@ const initialState: LlmState = {
       apiHost: 'http://ai2.tech.intra.nsfocus.com',
       models: SYSTEM_MODELS.nsfocus,
       isSystem: true,
-      enabled: false
+      enabled: true
     },
     {
       id: 'silicon',
