@@ -16,7 +16,6 @@ type LlmSettings = {
   }
 }
 
-
 export interface LlmState {
   providers: Provider[]
   defaultModel: Model
@@ -26,7 +25,7 @@ export interface LlmState {
 }
 
 export const INITIAL_PROVIDERS: Provider[] = [
-      {
+  {
       id: 'nsfocus',
       name: 'nsfocus',
       type: 'openai',
@@ -35,7 +34,7 @@ export const INITIAL_PROVIDERS: Provider[] = [
       models: SYSTEM_MODELS.nsfocus,
       isSystem: true,
       enabled: false
-    },
+  },
   {
     id: 'silicon',
     name: 'Silicon',
@@ -487,7 +486,6 @@ const initialState: LlmState = {
     }
   }
 }
-
 
 const getIntegratedInitialState = () => {
   const model = JSON.parse(import.meta.env.VITE_RENDERER_INTEGRATED_MODEL)
