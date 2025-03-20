@@ -16,11 +16,12 @@ type LlmSettings = {
   }
 }
 
+
 export interface LlmState {
   providers: Provider[]
-  defaultModel: SYSTEM_MODELS.nsfocus[0],
-  topicNamingModel: SYSTEM_MODELS.nsfocus[0],
-  translateModel: SYSTEM_MODELS.silicon[0],
+  defaultModel: Model
+  topicNamingModel: Model
+  translateModel: Model
   settings: LlmSettings
 }
 
@@ -468,6 +469,12 @@ export const INITIAL_PROVIDERS: Provider[] = [
     enabled: false
   }
 ]
+
+const initialState: LlmState = {
+  defaultModel: SYSTEM_MODELS.nsfocus[0],
+  topicNamingModel: SYSTEM_MODELS.nsfocus[0],
+  translateModel: SYSTEM_MODELS.nsfocus[0],
+  providers: INITIAL_PROVIDERS,
   settings: {
     ollama: {
       keepAliveTime: 0
@@ -480,6 +487,7 @@ export const INITIAL_PROVIDERS: Provider[] = [
     }
   }
 }
+
 
 const getIntegratedInitialState = () => {
   const model = JSON.parse(import.meta.env.VITE_RENDERER_INTEGRATED_MODEL)
