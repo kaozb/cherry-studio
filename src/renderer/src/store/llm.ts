@@ -33,7 +33,7 @@ export const INITIAL_PROVIDERS: Provider[] = [
       apiHost: 'http://ai2.tech.intra.nsfocus.com',
       models: SYSTEM_MODELS.nsfocus,
       isSystem: true,
-      enabled: false
+      enabled: true
   },
   {
     id: 'silicon',
@@ -43,7 +43,7 @@ export const INITIAL_PROVIDERS: Provider[] = [
     apiHost: 'https://api.siliconflow.cn',
     models: SYSTEM_MODELS.silicon,
     isSystem: true,
-    enabled: true
+    enabled: false
   },
   {
     id: 'aihubmix',
