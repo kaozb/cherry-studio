@@ -1,6 +1,6 @@
 // 配置信息
 const config = {
-  R2_CUSTOM_DOMAIN: 'cherrystudio.ocool.online',
+  R2_CUSTOM_DOMAIN: 'userai.tech.intra.nsfocus.com/static/cherry/',
   R2_BUCKET_NAME: 'cherrystudio',
   // 缓存键名
   CACHE_KEY: 'cherry-studio-latest-release',
@@ -122,7 +122,7 @@ async function getLatestRelease(env) {
               .filter((file) => file.uploaded)
               .map((file) => ({
                 name: file.name,
-                url: `https://${config.R2_CUSTOM_DOMAIN}/${file.name}`,
+                url: `http://${config.R2_CUSTOM_DOMAIN}/${file.name}`,
                 size: formatFileSize(file.size)
               }))
           }
@@ -303,7 +303,7 @@ async function getCachedRelease(env) {
               .filter((file) => file.uploaded)
               .map((file) => ({
                 name: file.name,
-                url: `https://${config.R2_CUSTOM_DOMAIN}/${file.name}`,
+                url: `http://${config.R2_CUSTOM_DOMAIN}/${file.name}`,
                 size: formatFileSize(file.size)
               }))
           }
@@ -446,7 +446,7 @@ async function checkNewRelease(env) {
           .filter((file) => file.uploaded)
           .map((file) => ({
             name: file.name,
-            url: `https://${config.R2_CUSTOM_DOMAIN}/${file.name}`,
+            url: `http://${config.R2_CUSTOM_DOMAIN}/${file.name}`,
             size: formatFileSize(file.size)
           }))
       }
