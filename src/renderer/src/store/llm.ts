@@ -18,9 +18,9 @@ type LlmSettings = {
 
 export interface LlmState {
   providers: Provider[]
-  defaultModel: Model
-  topicNamingModel: Model
-  translateModel: Model
+  defaultModel: SYSTEM_MODELS.nsfocus[0]
+  topicNamingModel: SYSTEM_MODELS.nsfocus[0]
+  translateModel: SYSTEM_MODELS.nsfocus[0]
   settings: LlmSettings
 }
 
