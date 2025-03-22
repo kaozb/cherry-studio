@@ -333,6 +333,17 @@ const MessageMenubar: FC<Props> = (props) => {
           </ActionButton>
         </Tooltip>
       )}
+      {isAssistantMessage && (
+        <Tooltip title={t('chat.topics.export.notion')} mouseEnterDelay={0.8}>
+          <ActionButton className="message-action-button" onClick={() => {
+            const title = getMessageTitle(message);
+            const markdown = messageToMarkdown(message);
+            exportMarkdownToNotion(title, markdown);
+          }}>
+            <i className="iconfont icon-at" style={{ fontSize: 16 }}></i>
+          </ActionButton>
+        </Tooltip>
+      )}
       {!isUserMessage && (
         <Dropdown
           menu={{
