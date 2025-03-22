@@ -340,7 +340,7 @@ const MessageMenubar: FC<Props> = (props) => {
             const markdown = messageToMarkdown(message);
             exportMarkdownToNotion(title, markdown);
           }}>
-            <i className="iconfont icon-at" style={{ fontSize: 16 }}></i>
+            <i className="iconfont icon-notion" style={{ fontSize: 16 }}></i>
           </ActionButton>
         </Tooltip>
       )}
