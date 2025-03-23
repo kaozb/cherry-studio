@@ -625,6 +625,7 @@
     "provider": {
       "aihubmix": "AiHubMix",
       "alayanew": "Alaya NeW",
+      "nsfocus": "nsfocus",
       "anthropic": "Anthropic",
       "azure-openai": "Azure OpenAI",
       "baichuan": "百川",
