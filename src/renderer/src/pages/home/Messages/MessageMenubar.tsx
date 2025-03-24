@@ -295,13 +295,12 @@ const MessageMenubar: FC<Props> = (props) => {
           </ActionButton>
         </Tooltip>
       )}
-      {message.role === 'user' && (
-        <Tooltip title={t('common.edit')} mouseEnterDelay={0.8}>
-          <ActionButton className="message-action-button" onClick={onEdit}>
-            <EditOutlined />
-          </ActionButton>
-        </Tooltip>
-      )}
+
+      <Tooltip title={t('common.edit')} mouseEnterDelay={0.8}>
+        <ActionButton className="message-action-button" onClick={onEdit}>
+          <EditOutlined />
+        </ActionButton>
+      </Tooltip>
       <Tooltip title={t('common.copy')} mouseEnterDelay={0.8}>
         <ActionButton className="message-action-button" onClick={onCopy}>
           {!copied && <i className="iconfont icon-copy"></i>}
@@ -341,13 +340,6 @@ const MessageMenubar: FC<Props> = (props) => {
             exportMarkdownToNotion(title, markdown);
           }}>
             <i className="iconfont icon-notion" style={{ fontSize: 16 }}></i>
-          </ActionButton>
-        </Tooltip>
-      )}
-      {isAssistantMessage && (
-        <Tooltip title={t('common.edit')} mouseEnterDelay={0.8}>
-          <ActionButton className="message-action-edit" onClick={onEdit}>
-            <i className="iconfont icon-edit" style={{ fontSize: 16 }}></i>
           </ActionButton>
         </Tooltip>
       )}
