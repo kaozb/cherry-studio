@@ -344,6 +344,13 @@ const MessageMenubar: FC<Props> = (props) => {
           </ActionButton>
         </Tooltip>
       )}
+      {isAssistantMessage && (
+        <Tooltip title={t('common.edit')} mouseEnterDelay={0.8}>
+          <ActionButton className="message-action-edit" onClick={}>
+            <i className="iconfont icon-edit" style={{ fontSize: 16 }}></i>
+          </ActionButton>
+        </Tooltip>
+      )}
       {!isUserMessage && (
         <Dropdown
           menu={{
