@@ -50,8 +50,23 @@ const migrateConfig = {
     return state
   },
   '6': (state: RootState) => {
-    addProvider(state, 'openrouter')
-    return state
+    return {
+      ...state,
+      llm: {
+        ...state.llm,
+        providers: [
+          ...state.llm.providers,
+          {
+            id: 'nsfocus',
+            name: 'nsfocus',
+            apiKey: '',
+            apiHost: 'http://ai2.tech.intra.nsfocus.com/v1/',
+            models: SYSTEM_MODELS.nsfocus,
+            isSystem: true
+          }
+        ]
+      }
+    }
   },
   '7': (state: RootState) => {
     return {
