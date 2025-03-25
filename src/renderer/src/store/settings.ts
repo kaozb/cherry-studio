@@ -483,6 +483,7 @@ export const {
   setJoplinUrl,
   setMessageNavigation,
   setDefaultObsidianVault,
+  setefaultAides,
   setSiyuanApiUrl,
   setSiyuanToken,
   setSiyuanBoxId,

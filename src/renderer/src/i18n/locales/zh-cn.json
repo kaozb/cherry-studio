@@ -884,7 +884,7 @@
           "help": "获取语雀 Token",
           "repo_url": "知识库 URL",
           "repo_url_placeholder": "助手URL",
-          "title": "语雀配置",
+          "title": "助手配置",
           "token": "语雀 Token",
           "token_placeholder": "请输入语雀Token"
         },
