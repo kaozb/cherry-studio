@@ -18,6 +18,10 @@ export const getAgentsFromSystemAgents = (systemAgents: any) => {
 
 export function useSystemAgents() {
   const { defaultaides } = store.getState().settings
+  if (defaultaides === null || defaultaides === undefined) {
+    console.error('defaultaides is null or undefined');
+    return useLocalSystemAgents();
+  }
   if (!defaultaides.startsWith('http')) {
     return useLocalSystemAgents();
   } else {
@@ -29,7 +33,10 @@ const useRemoteSystemAgents = () => {
   const [agents, setAgents] = useState<Agent[]>([]);
   const { defaultaides } = store.getState().settings
   const resourcesPath = `${defaultaides}`;
-
+  if (defaultaides === null || defaultaides === undefined) {
+    console.error('defaultaides is null or undefined');
+    return agents;
+  }
   useEffect(() => {
     const loadAgents = async () => {
       try {
