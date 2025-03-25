@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { useSelector } from 'react-redux'
 import { SettingDivider, SettingGroup, SettingRow, SettingRowTitle, SettingTitle } from '..'
 
-const defaultaidesSettings: FC = () => {
+const DefaultaidesSettings: FC = () => {
   const { t } = useTranslation()
   const { theme } = useTheme()
   const dispatch = useAppDispatch()
@@ -43,4 +43,4 @@ const defaultaidesSettings: FC = () => {
   )
 }
 
-export default defaultaidesSettings
+export default DefaultaidesSettings

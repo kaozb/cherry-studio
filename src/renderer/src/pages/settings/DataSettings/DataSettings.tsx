@@ -31,7 +31,8 @@ import ObsidianSettings from './ObsidianSettings'
 import SiyuanSettings from './SiyuanSettings'
 import WebDavSettings from './WebDavSettings'
 import YuqueSettings from './YuqueSettings'
-import defaultaidesSettings from './DefaultaidesSettings'
+import DefaultaidesSettings from './DefaultaidesSettings'
+
 const DataSettings: FC = () => {
   const { t } = useTranslation()
   const [appInfo, setAppInfo] = useState<AppInfo>()
@@ -238,7 +239,7 @@ const DataSettings: FC = () => {
         {menu === 'joplin' && <JoplinSettings />}
         {menu === 'obsidian' && <ObsidianSettings />}
         {menu === 'siyuan' && <SiyuanSettings />}
-        {menu === 'default_aides' && <defaultaidesSettings />}
+        {menu === 'default_aides' && <DefaultaidesSettings />}
       </SettingContainer>
     </Container>
   )
