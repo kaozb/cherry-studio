@@ -300,26 +300,25 @@ const MessageMenubar: FC<Props> = (props) => {
           </ActionButton>
         </Tooltip>
       )}
+
         <Tooltip title={t('common.edit')} mouseEnterDelay={0.8}>
           <ActionButton className="message-action-button" onClick={onEdit}>
             <EditOutlined />
           </ActionButton>
         </Tooltip>
       <Tooltip title={t('chat.topics.export.notion')} mouseEnterDelay={0.8}>
-  <ActionButton
-    className="message-action-button"
-    onClick={async (e) => {
-      e.stopPropagation();
-      const title = await getMessageTitle(message);
-      const markdown = messageToMarkdown(message);
-      exportMarkdownToNotion(title, markdown);
-      window.message.success({ content: t('chat.topics.export.notion.success'), key: 'export-notion' });
-    }}
-  >
-    <i className="iconfont icon-notion"></i>
-  </ActionButton>
-</Tooltip>
-
+          <ActionButton
+            className="message-action-button"
+            onClick={async (e) => {
+              e.stopPropagation();
+              const title = await getMessageTitle(message);
+              const markdown = messageToMarkdown(message);
+              exportMarkdownToNotion(title, markdown);
+              window.message.success({ content: t('chat.topics.export.notion.success'), key: 'export-notion' });
+            }}>
+            <i className="iconfont icon-notion"></i>
+          </ActionButton>
+      </Tooltip>
 
       <Tooltip title={t('common.copy')} mouseEnterDelay={0.8}>
         <ActionButton className="message-action-button" onClick={onCopy}>
@@ -350,6 +349,17 @@ const MessageMenubar: FC<Props> = (props) => {
         <Tooltip title={t('message.mention.title')} mouseEnterDelay={0.8}>
           <ActionButton className="message-action-button" onClick={onMentionModel}>
             <i className="iconfont icon-at" style={{ fontSize: 16 }}></i>
+          </ActionButton>
+        </Tooltip>
+      )}
+      {isAssistantMessage && (
+        <Tooltip title={t('chat.topics.export.notion')} mouseEnterDelay={0.8}>
+          <ActionButton className="message-action-button" onClick={() => {
+            const title = getMessageTitle(message);
+            const markdown = messageToMarkdown(message);
+            exportMarkdownToNotion(title, markdown);
+          }}>
+            <i className="iconfont icon-notion" style={{ fontSize: 16 }}></i>
           </ActionButton>
         </Tooltip>
       )}

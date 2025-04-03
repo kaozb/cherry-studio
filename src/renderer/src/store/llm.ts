@@ -26,6 +26,16 @@ export interface LlmState {
 
 export const INITIAL_PROVIDERS: Provider[] = [
   {
+      id: 'nsfocus',
+      name: 'nsfocus',
+      type: 'openai',
+      apiKey: 'sk-mc7u43s1AwDQRYOIPXBprITvubjdzzhbWppdjoLuu4ZiOcQU',
+      apiHost: 'http://ai2.tech.intra.nsfocus.com',
+      models: SYSTEM_MODELS.nsfocus,
+      isSystem: true,
+      enabled: true
+  },
+  {
     id: 'silicon',
     name: 'Silicon',
     type: 'openai',
@@ -33,7 +43,7 @@ export const INITIAL_PROVIDERS: Provider[] = [
     apiHost: 'https://api.siliconflow.cn',
     models: SYSTEM_MODELS.silicon,
     isSystem: true,
-    enabled: true
+    enabled: false
   },
   {
     id: 'aihubmix',
@@ -470,9 +480,9 @@ export const INITIAL_PROVIDERS: Provider[] = [
 ]
 
 const initialState: LlmState = {
-  defaultModel: SYSTEM_MODELS.silicon[1],
-  topicNamingModel: SYSTEM_MODELS.silicon[2],
-  translateModel: SYSTEM_MODELS.silicon[3],
+  defaultModel: SYSTEM_MODELS.nsfocus[0],
+  topicNamingModel: SYSTEM_MODELS.nsfocus[0],
+  translateModel: SYSTEM_MODELS.nsfocus[0],
   providers: INITIAL_PROVIDERS,
   settings: {
     ollama: {
