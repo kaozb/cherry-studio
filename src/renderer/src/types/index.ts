@@ -17,6 +17,7 @@ export type Assistant = {
   messages?: AssistantMessage[]
   enableWebSearch?: boolean
   enableGenerateImage?: boolean
+  mcpServers?: MCPServer[]
 }
 
 export type AssistantMessage = {
@@ -162,7 +163,7 @@ export interface Painting {
 }
 
 export type MinAppType = {
-  id?: string | number
+  id: string
   name: string
   logo?: string
   url: string
@@ -308,6 +309,7 @@ export type GenerateImageParams = {
 }
 
 export type GenerateImageResponse = {
+  type: 'url' | 'base64'
   images: string[]
 }
 
@@ -361,10 +363,12 @@ export interface MCPServerParameter {
 }
 
 export interface MCPServer {
+  id: string
   name: string
   description?: string
   baseUrl?: string
   command?: string
+  registryUrl?: string
   args?: string[]
   env?: Record<string, string>
   isActive: boolean
@@ -380,6 +384,7 @@ export interface MCPToolInputSchema {
 
 export interface MCPTool {
   id: string
+  serverId: string
   serverName: string
   name: string
   description?: string
