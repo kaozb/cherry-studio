@@ -74,7 +74,7 @@ linux:
 publish:
   provider: github
   repo: cherry-studio
-  owner: CherryHQ
+  owner: kaozb
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/
 afterPack: scripts/after-pack.js
