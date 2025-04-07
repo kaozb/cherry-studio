@@ -1188,26 +1188,23 @@ const migrateConfig = {
     }
   },
   '999': (state: RootState) => {
-    try {
-        return {
-          ...state,
-          llm: {
-            ...state.llm,
-            providers: [
-              ...state.llm.providers,
-              {
-                id: 'nsfocus',
-                name: 'nsfocus',
-                apiKey: '',
-                apiHost: 'http://ai2.tech.intra.nsfocus.com/v1/',
-                models: SYSTEM_MODELS.nsfocus,
-                isSystem: true
-              }
-            ]
+    return {
+      ...state,
+      llm: {
+        ...state.llm,
+        providers: [
+          ...state.llm.providers,
+          {
+            id: 'nsfocus',
+            name: 'nsfocus',
+            apiKey: '',
+            apiHost: 'http://ai2.tech.intra.nsfocus.com/v1/',
+            models: SYSTEM_MODELS.nsfocus,
+            isSystem: true
           }
-      } catch (error) {
-        return state
+        ]
       }
+    }
   },
   '91': (state: RootState) => {
     try {
