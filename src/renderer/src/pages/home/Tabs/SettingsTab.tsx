@@ -1,4 +1,4 @@
-import { CheckOutlined, QuestionCircleOutlined, ReloadOutlined } from '@ant-design/icons'
+import { CheckOutlined, QuestionCircleOutlined, ReloadOutlined, SettingOutlined } from '@ant-design/icons'
 import { HStack } from '@renderer/components/Layout'
 import Scrollbar from '@renderer/components/Scrollbar'
 import {
@@ -13,11 +13,16 @@ import { codeThemes } from '@renderer/context/SyntaxHighlighterProvider'
 import { useAssistant } from '@renderer/hooks/useAssistant'
 import { useSettings } from '@renderer/hooks/useSettings'
 import { SettingDivider, SettingRow, SettingRowTitle, SettingSubtitle } from '@renderer/pages/settings'
+import AssistantSettingsPopup from '@renderer/pages/settings/AssistantSettings'
 import { getDefaultModel } from '@renderer/services/AssistantService'
 import { useAppDispatch } from '@renderer/store'
 import {
   SendMessageShortcut,
   setAutoTranslateWithSpace,
+  setCodeCacheable,
+  setCodeCacheMaxSize,
+  setCodeCacheThreshold,
+  setCodeCacheTTL,
   setCodeCollapsible,
   setCodeShowLineNumbers,
   setCodeStyle,
@@ -37,7 +42,7 @@ import {
 } from '@renderer/store/settings'
 import { Assistant, AssistantSettings, CodeStyleVarious, ThemeMode, TranslateLanguageVarious } from '@renderer/types'
 import { modalConfirm } from '@renderer/utils'
-import { Col, InputNumber, Row, Segmented, Select, Slider, Switch, Tooltip } from 'antd'
+import { Button, Col, InputNumber, Row, Segmented, Select, Slider, Switch, Tooltip } from 'antd'
 import { FC, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import styled from 'styled-components'
@@ -74,6 +79,10 @@ const SettingsTab: FC<Props> = (props) => {
     codeShowLineNumbers,
     codeCollapsible,
     codeWrappable,
+    codeCacheable,
+    codeCacheMaxSize,
+    codeCacheTTL,
+    codeCacheThreshold,
     mathEngine,
     autoTranslateWithSpace,
     pasteLongTextThreshold,
@@ -145,11 +154,19 @@ const SettingsTab: FC<Props> = (props) => {
   return (
     <Container className="settings-tab">
       <SettingGroup style={{ marginTop: 10 }}>
-        <SettingSubtitle style={{ marginTop: 0 }}>
-          {t('settings.messages.model.title')}{' '}
-          <Tooltip title={t('chat.settings.reset')}>
-            <ReloadOutlined onClick={onReset} style={{ cursor: 'pointer', fontSize: 12, padding: '0 3px' }} />
-          </Tooltip>
+        <SettingSubtitle style={{ marginTop: 0, display: 'flex', justifyContent: 'space-between' }}>
+          <HStack alignItems="center">
+            {t('assistants.settings.title')}{' '}
+            <Tooltip title={t('chat.settings.reset')}>
+              <ReloadOutlined onClick={onReset} style={{ cursor: 'pointer', fontSize: 12, padding: '0 3px' }} />
+            </Tooltip>
+          </HStack>
+          <Button
+            type="text"
+            size="small"
+            icon={<SettingOutlined />}
+            onClick={() => AssistantSettingsPopup.show({ assistant, tab: 'model' })}
+          />
         </SettingSubtitle>
         <SettingDivider />
         <Row align="middle">
@@ -321,6 +338,74 @@ const SettingsTab: FC<Props> = (props) => {
           <SettingRowTitleSmall>{t('chat.settings.code_wrappable')}</SettingRowTitleSmall>
           <Switch size="small" checked={codeWrappable} onChange={(checked) => dispatch(setCodeWrappable(checked))} />
         </SettingRow>
+        <SettingDivider />
+        <SettingRow>
+          <SettingRowTitleSmall>
+            {t('chat.settings.code_cacheable')}{' '}
+            <Tooltip title={t('chat.settings.code_cacheable.tip')}>
+              <QuestionIcon style={{ marginLeft: 4 }} />
+            </Tooltip>
+          </SettingRowTitleSmall>
+          <Switch size="small" checked={codeCacheable} onChange={(checked) => dispatch(setCodeCacheable(checked))} />
+        </SettingRow>
+        {codeCacheable && (
+          <>
+            <SettingDivider />
+            <SettingRow>
+              <SettingRowTitleSmall>
+                {t('chat.settings.code_cache_max_size')}
+                <Tooltip title={t('chat.settings.code_cache_max_size.tip')}>
+                  <QuestionIcon style={{ marginLeft: 4 }} />
+                </Tooltip>
+              </SettingRowTitleSmall>
+              <InputNumber
+                size="small"
+                min={1000}
+                max={10000}
+                step={1000}
+                value={codeCacheMaxSize}
+                onChange={(value) => dispatch(setCodeCacheMaxSize(value ?? 1000))}
+                style={{ width: 80 }}
+              />
+            </SettingRow>
+            <SettingDivider />
+            <SettingRow>
+              <SettingRowTitleSmall>
+                {t('chat.settings.code_cache_ttl')}
+                <Tooltip title={t('chat.settings.code_cache_ttl.tip')}>
+                  <QuestionIcon style={{ marginLeft: 4 }} />
+                </Tooltip>
+              </SettingRowTitleSmall>
+              <InputNumber
+                size="small"
+                min={15}
+                max={720}
+                step={15}
+                value={codeCacheTTL}
+                onChange={(value) => dispatch(setCodeCacheTTL(value ?? 15))}
+                style={{ width: 80 }}
+              />
+            </SettingRow>
+            <SettingDivider />
+            <SettingRow>
+              <SettingRowTitleSmall>
+                {t('chat.settings.code_cache_threshold')}
+                <Tooltip title={t('chat.settings.code_cache_threshold.tip')}>
+                  <QuestionIcon style={{ marginLeft: 4 }} />
+                </Tooltip>
+              </SettingRowTitleSmall>
+              <InputNumber
+                size="small"
+                min={0}
+                max={50}
+                step={1}
+                value={codeCacheThreshold}
+                onChange={(value) => dispatch(setCodeCacheThreshold(value ?? 2))}
+                style={{ width: 80 }}
+              />
+            </SettingRow>
+          </>
+        )}
         <SettingDivider />
         <SettingRow>
           <SettingRowTitleSmall>
