@@ -330,6 +330,7 @@ const MessageMenubar: FC<Props> = (props) => {
           <EditOutlined />
         </ActionButton>
       </Tooltip>
+
       <Tooltip title={t('common.copy')} mouseEnterDelay={0.8}>
         <ActionButton className="message-action-button" onClick={onCopy}>
           {!copied && <i className="iconfont icon-copy"></i>}
@@ -358,17 +359,6 @@ const MessageMenubar: FC<Props> = (props) => {
         <Tooltip title={t('message.mention.title')} mouseEnterDelay={0.8}>
           <ActionButton className="message-action-button" onClick={onMentionModel}>
             <i className="iconfont icon-at" style={{ fontSize: 16 }}></i>
-          </ActionButton>
-        </Tooltip>
-      )}
-      {isAssistantMessage && (
-        <Tooltip title={t('chat.topics.export.notion')} mouseEnterDelay={0.8}>
-          <ActionButton className="message-action-button" onClick={() => {
-            const title = getMessageTitle(message);
-            const markdown = messageToMarkdown(message);
-            exportMarkdownToNotion(title, markdown);
-          }}>
-            <i className="iconfont icon-notion" style={{ fontSize: 16 }}></i>
           </ActionButton>
         </Tooltip>
       )}
