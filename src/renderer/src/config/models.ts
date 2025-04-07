@@ -1942,7 +1942,36 @@ export const SYSTEM_MODELS: Record<string, Model[]> = {
       group: 'Jina'
     }
   ],
-  xirang: [],
+
+  nsfocus: [
+    {
+      id: 'secllm-v3',
+      provider: 'nsfocus',
+      name: 'secllm-v3',
+      group: '绿盟科技'
+    },
+    {
+      id: 'text-embedding-3-large',
+      provider: 'nsfocus',
+      name: 'text-embedding-3-large',
+      group: '绿盟科技'
+    },
+  ],
+  //加前缀是为了展示图标
+  xirang: [
+    {
+      id: 'xirang-4bd107bff85941239e27b1509eccfe98',
+      provider: 'xirang',
+      name: 'DeepSeek-R1',
+      group: 'xirang'
+    },
+    {
+      id: 'xirang-9dc913a037774fc0b248376905c85da5',
+      provider: 'xirang',
+      name: 'DeepSeek-V3',
+      group: 'xirang'
+    }
+  ],
   'tencent-cloud-ti': [
     {
       id: 'deepseek-r1',

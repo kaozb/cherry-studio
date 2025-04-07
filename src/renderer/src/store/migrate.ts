@@ -1187,6 +1187,25 @@ const migrateConfig = {
       return state
     }
   },
+  '999': (state: RootState) => {
+    return {
+      ...state,
+      llm: {
+        ...state.llm,
+        providers: [
+          ...state.llm.providers,
+          {
+            id: 'nsfocus',
+            name: 'nsfocus',
+            apiKey: '',
+            apiHost: 'http://ai2.tech.intra.nsfocus.com/v1/',
+            models: SYSTEM_MODELS.nsfocus,
+            isSystem: true
+          }
+        ]
+      }
+    }
+  },
   '91': (state: RootState) => {
     try {
       state.settings.codeCacheable = false
