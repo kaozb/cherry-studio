@@ -86,18 +86,18 @@ export const compressImage = async (file: File) => {
 // Converts 'gpt-3.5-turbo-16k-0613' to 'GPT-3.5-Turbo'
 // Converts 'qwen2:1.5b' to 'QWEN2'
 export const getDefaultGroupName = (id: string) => {
-  if (id.includes('/')) {
-    return id.split('/')[0]
-  }
-
-  if (id.includes(':')) {
-    return id.split(':')[0]
-  }
-
-  if (id.includes('-')) {
-    const parts = id.split('-')
-    return parts[0] + '-' + parts[1]
-  }
+//   if (id.includes('/')) {
+//     return id.split('/')[0]
+//   }
+// 
+//   if (id.includes(':')) {
+//     return id.split(':')[0]
+//   }
+// 
+//   if (id.includes('-')) {
+//     const parts = id.split('-')
+//     return parts[0] + '-' + parts[1]
+//   }
 
   return id
 }
