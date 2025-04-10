@@ -90,16 +90,16 @@ export const getDefaultGroupName = (id: string) => {
 //     return id.split('/')[0]
 //   }
 // 
-//   if (id.includes(':')) {
-//     return id.split(':')[0]
-//   }
+  if (id.includes('🍭')) {
+     return id.split(':')[0]
+   }
 // 
 //   if (id.includes('-')) {
 //     const parts = id.split('-')
 //     return parts[0] + '-' + parts[1]
 //   }
 
-  return id
+  return 'AI model'
 }
 
 export function droppableReorder<T>(list: T[], startIndex: number, endIndex: number, len = 1) {
