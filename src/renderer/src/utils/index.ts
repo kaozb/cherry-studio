@@ -90,9 +90,9 @@ export const getDefaultGroupName = (id: string) => {
 //     return id.split('/')[0]
 //   }
 // 
-//   if (id.includes(':')) {
-//     return id.split(':')[0]
-//   }
+  if (id.includes('🍭')) {
+     return id.split(':')[0]
+   }
 // 
 //   if (id.includes('-')) {
 //     const parts = id.split('-')
