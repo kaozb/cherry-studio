@@ -1217,6 +1217,44 @@ const migrateConfig = {
       addWebSearchProvider(state, 'local-google')
       addWebSearchProvider(state, 'local-bing')
       addWebSearchProvider(state, 'local-baidu')
+
+      if (state.websearch) {
+        if (isEmpty(state.websearch.subscribeSources)) {
+          state.websearch.subscribeSources = []
+        }
+      }
+
+      const qiniuProvider = state.llm.providers.find((provider) => provider.id === 'qiniu')
+      if (qiniuProvider && isEmpty(qiniuProvider.models)) {
+        qiniuProvider.models = SYSTEM_MODELS.qiniu
+      }
+      return state
+    } catch (error) {
+      return state
+    }
+  },
+  '96': (state: RootState) => {
+    try {
+      // @ts-ignore eslint-disable-next-line
+      state.settings.assistantIconType = state.settings?.showAssistantIcon ? 'model' : 'emoji'
+      // @ts-ignore eslint-disable-next-line
+      delete state.settings.showAssistantIcon
+      state.settings.enableBackspaceDeleteModel = true
+      return state
+    } catch (error) {
+      return state
+    }
+  },
+  '97': (state: RootState) => {
+    try {
+      addMiniApp(state, 'zai')
+      state.settings.webdavMaxBackups = 0
+      if (state.websearch && state.websearch.providers) {
+        state.websearch.providers.forEach((provider) => {
+          provider.basicAuthUsername = ''
+          provider.basicAuthPassword = ''
+        })
+      }
       return state
     } catch (error) {
       return state
