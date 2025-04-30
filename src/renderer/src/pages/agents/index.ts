@@ -33,6 +33,5 @@ export function useSystemAgents() {
     
     loadAgents()
   }, [resourcesPath])
-
   return agents
 }
