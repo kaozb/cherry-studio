@@ -389,19 +389,31 @@ const MessageMenubar: FC<Props> = (props) => {
           </ActionButton>
         </Tooltip>
       )}
-      {message.role === 'user' && (
-        <Tooltip title={t('common.edit')} mouseEnterDelay={0.8}>
-          <ActionButton className="message-action-button" onClick={onEdit}>
-            <EditOutlined />
-          </ActionButton>
-        </Tooltip>
-      )}
+      <Tooltip title={t('common.edit')} mouseEnterDelay={0.8}>
+        <ActionButton className="message-action-button" onClick={onEdit}>
+          <EditOutlined />
+        </ActionButton>
+      </Tooltip>
+      
+      <Tooltip title={t('chat.topics.export.notion')} mouseEnterDelay={0.8}>
+        <ActionButton 
+          className="message-action-button"
+          onClick={async () => {
+            const title = await getMessageTitle(message)
+            const markdown = messageToMarkdown(message)
+            exportMarkdownToNotion(title, markdown)
+          }}>
+          <i className="iconfont icon-notion" />
+        </ActionButton>
+      </Tooltip>
+
       <Tooltip title={t('common.copy')} mouseEnterDelay={0.8}>
         <ActionButton className="message-action-button" onClick={onCopy}>
           {!copied && <Copy size={16} />}
           {copied && <CheckOutlined style={{ color: 'var(--color-primary)' }} />}
         </ActionButton>
       </Tooltip>
+      
       {isAssistantMessage && (
         <Popconfirm
           title={t('message.regenerate.confirm')}

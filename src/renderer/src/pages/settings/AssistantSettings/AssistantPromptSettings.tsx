@@ -26,7 +26,7 @@ const AssistantPromptSettings: React.FC<Props> = ({ assistant, updateAssistant }
   const [prompt, setPrompt] = useState(assistant.prompt)
   const [tokenCount, setTokenCount] = useState(0)
   const { t } = useTranslation()
-  const [showMarkdown, setShowMarkdown] = useState(prompt.length > 0)
+  const [showMarkdown, setShowMarkdown] = useState(false)
 
   useEffect(() => {
     const updateTokenCount = async () => {
@@ -122,7 +122,7 @@ const AssistantPromptSettings: React.FC<Props> = ({ assistant, updateAssistant }
             {t('common.edit')}
           </Button>
         ) : (
-          <Button type="primary" onClick={() => setShowMarkdown(true)}>
+          <Button type="primary" onClick={() => setShowMarkdown(false)}>
             {t('common.save')}
           </Button>
         )}

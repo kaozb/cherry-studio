@@ -1,6 +1,6 @@
 // 配置信息
 const config = {
-  R2_CUSTOM_DOMAIN: 'cherrystudio.ocool.online',
+  R2_CUSTOM_DOMAIN: 'userai.tech.intra.nsfocus.com/static/cherry/',
   R2_BUCKET_NAME: 'cherrystudio',
   // 缓存键名
   CACHE_KEY: 'cherry-studio-latest-release',
@@ -122,7 +122,7 @@ async function getLatestRelease(env) {
               .filter((file) => file.uploaded)
               .map((file) => ({
                 name: file.name,
-                url: `https://${config.R2_CUSTOM_DOMAIN}/${file.name}`,
+                url: `http://${config.R2_CUSTOM_DOMAIN}/${file.name}`,
                 size: formatFileSize(file.size)
               }))
           }
@@ -303,7 +303,7 @@ async function getCachedRelease(env) {
               .filter((file) => file.uploaded)
               .map((file) => ({
                 name: file.name,
-                url: `https://${config.R2_CUSTOM_DOMAIN}/${file.name}`,
+                url: `http://${config.R2_CUSTOM_DOMAIN}/${file.name}`,
                 size: formatFileSize(file.size)
               }))
           }
@@ -349,7 +349,7 @@ async function getCachedRelease(env) {
 async function checkNewRelease(env) {
   try {
     // 获取 GitHub 最新版本
-    const githubResponse = await fetch('https://api.github.com/repos/kangfenmao/cherry-studio/releases/latest', {
+    const githubResponse = await fetch('https://api.github.com/repos/kaozb/cherry-studio/releases/latest', {
       headers: { 'User-Agent': 'CloudflareWorker' }
     })
 
@@ -446,7 +446,7 @@ async function checkNewRelease(env) {
           .filter((file) => file.uploaded)
           .map((file) => ({
             name: file.name,
-            url: `https://${config.R2_CUSTOM_DOMAIN}/${file.name}`,
+            url: `http://${config.R2_CUSTOM_DOMAIN}/${file.name}`,
             size: formatFileSize(file.size)
           }))
       }

@@ -46,6 +46,7 @@ export const waitAsyncFunction = (fn: () => Promise<any>, interval = 200, stopTi
 
 export const uuid = () => uuidv4()
 
+
 export function isFreeModel(model: Model) {
   return (model.id + model.name).toLocaleLowerCase().includes('free')
 }

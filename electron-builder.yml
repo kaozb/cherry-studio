@@ -81,7 +81,7 @@ linux:
     - x-scheme-handler/cherrystudio
 publish:
   provider: generic
-  url: https://releases.cherry-ai.com
+  url: http://userai.tech.intra.nsfocus.com/static/cherry/versions.json
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/
 afterPack: scripts/after-pack.js
