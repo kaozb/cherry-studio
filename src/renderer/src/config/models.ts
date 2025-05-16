@@ -381,6 +381,20 @@ export function getModelLogo(modelId: string) {
 }
 
 export const SYSTEM_MODELS: Record<string, Model[]> = {
+  nsfocus: [
+    {
+      id: 'secllm-v3',
+      provider: 'nsfocus',
+      name: 'secllm-v3',
+      group: '绿盟科技'
+    },
+    {
+      id: 'text-embedding-3-large',
+      provider: 'nsfocus',
+      name: 'text-embedding-3-large',
+      group: '绿盟科技'
+    },
+  ],
   aihubmix: [
     {
       id: 'gpt-4o',
