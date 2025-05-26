@@ -45,6 +45,9 @@ win:
   target:
     - target: nsis
     - target: portable
+  signtoolOptions:
+    sign: scripts/win-sign.js
+  verifyUpdateCodeSignature: false
 nsis:
   artifactName: ${productName}-${version}-${arch}-setup.${ext}
   shortcutName: ${productName}
@@ -92,10 +95,9 @@ artifactBuildCompleted: scripts/artifact-build-completed.js
 releaseInfo:
   releaseNotes: |
     ⚠️ 注意：升级前请备份数据，否则将无法降级
-    增加消息通知功能
-    增加 Google 小程序
-    MCP 支持运行 Python 代码
-    修复 MCP SSE 连接问题
-    修复消息编辑和消息多选相关问题
-    修复消息显示问题
-    修复话题提示词无效问题
+    文生图新增服务商 DMXAPI（限时免费）
+    输入框按钮支持拖拽排序
+    修复知识库搜索结果 100% 问题
+    修复拖拽多选消息相关问题
+    修复翻译回复内容导致内存异常问题
+    常规错误修复和优化

@@ -1,6 +1,6 @@
 {
   "name": "CherryStudio",
-  "version": "1.3.9",
+  "version": "1.3.12",
   "private": true,
   "description": "A powerful AI assistant for producer.",
   "main": "./out/main/index.js",
@@ -20,6 +20,7 @@
   "scripts": {
     "start": "electron-vite preview",
     "dev": "electron-vite dev",
+    "debug": "electron-vite -- --inspect --sourcemap --remote-debugging-port=9222",
     "build": "npm run typecheck && electron-vite build",
     "build:check": "yarn test && yarn typecheck && yarn check:i18n",
     "build:unpack": "dotenv npm run build && electron-builder --dir",
@@ -53,7 +54,6 @@
     "test:lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts",
     "format": "prettier --write .",
     "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
-    "postinstall": "electron-builder install-app-deps",
     "prepare": "husky"
   },
   "dependencies": {
@@ -152,7 +152,7 @@
     "dexie": "^4.0.8",
     "dexie-react-hooks": "^1.1.7",
     "dotenv-cli": "^7.4.2",
-    "electron": "35.2.2",
+    "electron": "35.4.0",
     "electron-builder": "26.0.15",
     "electron-devtools-installer": "^3.2.0",
     "electron-icon-builder": "^2.0.1",
@@ -221,7 +221,7 @@
     "openai@npm:^4.87.3": "patch:openai@npm%3A4.96.0#~/.yarn/patches/openai-npm-4.96.0-0665b05cb9.patch",
     "app-builder-lib@npm:26.0.15": "patch:app-builder-lib@npm%3A26.0.15#~/.yarn/patches/app-builder-lib-npm-26.0.15-360e5b0476.patch"
   },
-  "packageManager": "yarn@4.6.0",
+  "packageManager": "yarn@4.9.1",
   "lint-staged": {
     "*.{js,jsx,ts,tsx,cjs,mjs,cts,mts}": [
       "prettier --write",
