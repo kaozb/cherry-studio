@@ -1,5 +1,5 @@
 import Logger from '@renderer/config/logger'
-import { isFunctionCallingModel } from '@renderer/config/models'
+import { isFunctionCallingModel, isNotSupportTemperatureAndTopP } from '@renderer/config/models'
 import { REFERENCE_PROMPT } from '@renderer/config/prompts'
 import { getLMStudioKeepAliveTime } from '@renderer/hooks/useLMStudio'
 import type {
@@ -56,6 +56,7 @@ export default abstract class BaseProvider {
   abstract models(): Promise<OpenAI.Models.Model[]>
   abstract generateImage(params: GenerateImageParams): Promise<string[]>
   abstract generateImageByChat({ messages, assistant, onChunk, onFilterMessages }: CompletionsParams): Promise<void>
+  // 由于现在出现了一些能够选择嵌入维度的嵌入模型，这个不考虑dimensions参数的方法将只能应用于那些不支持dimensions的模型
   abstract getEmbeddingDimensions(model: Model): Promise<number>
   public abstract convertMcpTools<T>(mcpTools: MCPTool[]): T[]
   public abstract mcpToolCallResponseToMessage(
@@ -101,6 +102,14 @@ export default abstract class BaseProvider {
 
   public get keepAliveTime() {
     return this.provider.id === 'lmstudio' ? getLMStudioKeepAliveTime() : undefined
+  }
+
+  public getTemperature(assistant: Assistant, model: Model): number | undefined {
+    return isNotSupportTemperatureAndTopP(model) ? undefined : assistant.settings?.temperature
+  }
+
+  public getTopP(assistant: Assistant, model: Model): number | undefined {
+    return isNotSupportTemperatureAndTopP(model) ? undefined : assistant.settings?.topP
   }
 
   public async fakeCompletions({ onChunk }: CompletionsParams) {
