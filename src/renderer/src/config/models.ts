@@ -429,7 +429,26 @@ export const SYSTEM_MODELS: Record<string, Model[]> = {
       group: 'deepseek-ai'
     }
   ],
-
+  nsfocus: [
+    {
+      id: 'secllm-v3',
+      provider: 'nsfocus',
+      name: 'secllm-v3',
+      group: '绿盟科技'
+    },
+    {
+      id: 'embedding',
+      provider: 'nsfocus',
+      name: 'embedding',
+      group: '绿盟科技'
+    },
+    {
+      id: 'reranker',
+      provider: 'nsfocus',
+      name: 'reranker',
+      group: '绿盟科技'
+    },
+  ], 
   aihubmix: [
     {
       id: 'gpt-4o',
