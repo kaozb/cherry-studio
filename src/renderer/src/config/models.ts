@@ -381,7 +381,37 @@ export function getModelLogo(modelId: string) {
 }
 
 export const SYSTEM_MODELS: Record<string, Model[]> = {
-  nsfocus: [
+  defaultModel: [
+    {
+      // 默认助手模型
+      id: 'secllm-v3',
+      provider: 'nsfocus',
+      name: 'secllm-v3',
+      group: '绿盟科技'
+    },
+    {
+      // 默认话题命名模型
+      id: 'secllm-v3',
+      provider: 'nsfocus',
+      name: 'secllm-v3',
+      group: '绿盟科技'
+    },
+    {
+      // 默认翻译模型
+      id: 'secllm-v3',
+      provider: 'nsfocus',
+      name: 'secllm-v3',
+      group: '绿盟科技'
+    },
+    {
+      // 默认快捷助手模型
+      id: 'secllm-v3',
+      provider: 'nsfocus',
+      name: 'secllm-v3',
+      group: '绿盟科技'
+    }
+  ],
+   nsfocus: [
     {
       id: 'secllm-v3',
       provider: 'nsfocus',
@@ -389,12 +419,18 @@ export const SYSTEM_MODELS: Record<string, Model[]> = {
       group: '绿盟科技'
     },
     {
-      id: 'text-embedding-3-large',
+      id: 'embedding',
       provider: 'nsfocus',
-      name: 'text-embedding-3-large',
+      name: 'embedding',
       group: '绿盟科技'
     },
-  ],
+    {
+      id: 'reranker',
+      provider: 'nsfocus',
+      name: 'reranker',
+      group: '绿盟科技'
+    },
+  ], 
   aihubmix: [
     {
       id: 'gpt-4o',
