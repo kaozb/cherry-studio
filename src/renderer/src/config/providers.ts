@@ -44,11 +44,12 @@ import VoyageAIProviderLogo from '@renderer/assets/images/providers/voyageai.png
 import XirangProviderLogo from '@renderer/assets/images/providers/xirang.png'
 import ZeroOneProviderLogo from '@renderer/assets/images/providers/zero-one.png'
 import ZhipuProviderLogo from '@renderer/assets/images/providers/zhipu.png'
-
+import Nsfocus from '@renderer/assets/images/providers/nsfocus.png'
 import { TOKENFLUX_HOST } from './constant'
 
 const PROVIDER_LOGO_MAP = {
   openai: OpenAiProviderLogo,
+  nsfocus: Nsfocus,
   silicon: SiliconFlowProviderLogo,
   deepseek: DeepSeekProviderLogo,
   'gitee-ai': GiteeAIProviderLogo,
@@ -106,6 +107,17 @@ export const NOT_SUPPORTED_REANK_PROVIDERS = ['ollama']
 export const ONLY_SUPPORTED_DIMENSION_PROVIDERS = ['ollama', 'infini']
 
 export const PROVIDER_CONFIG = {
+  nsfocus: {
+    api: {
+      url: 'http://ai2.tech.intra.nsfocus.com'
+    },
+    websites: {
+      official: 'http://userai.tech.intra.nsfocus.com/static/cherry/help.png',
+      apiKey: 'http://doc.tech.intra.nsfocus.com/wikis/26588664-81c4-4363-b5f8-57ffa7d561ae/wYX6/',
+      docs: 'http://doc.tech.intra.nsfocus.com/wikis/26588664-81c4-4363-b5f8-57ffa7d561ae/wYX6/',
+      models: 'http://ai2.tech.intra.nsfocus.com/pricing'
+    }
+  },
   openai: {
     api: {
       url: 'https://api.openai.com'
