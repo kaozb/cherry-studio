@@ -247,14 +247,15 @@ export const INITIAL_PROVIDERS: Provider[] = [
     isVertex: false
   },
   {
-    id: 'zhipu',
-    name: 'ZhiPu',
-    type: 'openai',
+    id: 'vertexai',
+    name: 'VertexAI',
+    type: 'vertexai',
     apiKey: '',
-    apiHost: 'https://open.bigmodel.cn/api/paas/v4/',
-    models: SYSTEM_MODELS.zhipu,
+    apiHost: 'https://aiplatform.googleapis.com',
+    models: [],
     isSystem: true,
-    enabled: false
+    enabled: false,
+    isVertex: true
   },
   {
     id: 'github',
@@ -276,6 +277,16 @@ export const INITIAL_PROVIDERS: Provider[] = [
     isSystem: true,
     enabled: false,
     isAuthed: false
+  },
+  {
+    id: 'zhipu',
+    name: 'ZhiPu',
+    type: 'openai',
+    apiKey: '',
+    apiHost: 'https://open.bigmodel.cn/api/paas/v4/',
+    models: SYSTEM_MODELS.zhipu,
+    isSystem: true,
+    enabled: false
   },
   {
     id: 'yi',
@@ -388,26 +399,6 @@ export const INITIAL_PROVIDERS: Provider[] = [
     enabled: false
   },
   {
-    id: 'zhinao',
-    name: 'zhinao',
-    type: 'openai',
-    apiKey: '',
-    apiHost: 'https://api.360.cn',
-    models: SYSTEM_MODELS.zhinao,
-    isSystem: true,
-    enabled: false
-  },
-  {
-    id: 'hunyuan',
-    name: 'hunyuan',
-    type: 'openai',
-    apiKey: '',
-    apiHost: 'https://api.hunyuan.cloud.tencent.com',
-    models: SYSTEM_MODELS.hunyuan,
-    isSystem: true,
-    enabled: false
-  },
-  {
     id: 'nvidia',
     name: 'nvidia',
     type: 'openai',
@@ -488,6 +479,16 @@ export const INITIAL_PROVIDERS: Provider[] = [
     enabled: false
   },
   {
+    id: 'hunyuan',
+    name: 'hunyuan',
+    type: 'openai',
+    apiKey: '',
+    apiHost: 'https://api.hunyuan.cloud.tencent.com',
+    models: SYSTEM_MODELS.hunyuan,
+    isSystem: true,
+    enabled: false
+  },
+  {
     id: 'tencent-cloud-ti',
     name: 'Tencent Cloud TI',
     type: 'openai',
@@ -526,17 +527,6 @@ export const INITIAL_PROVIDERS: Provider[] = [
     models: SYSTEM_MODELS.voyageai,
     isSystem: true,
     enabled: false
-  },
-  {
-    id: 'vertexai',
-    name: 'VertexAI',
-    type: 'vertexai',
-    apiKey: '',
-    apiHost: 'https://aiplatform.googleapis.com',
-    models: [],
-    isSystem: true,
-    enabled: false,
-    isVertex: true
   }
 ]
 
