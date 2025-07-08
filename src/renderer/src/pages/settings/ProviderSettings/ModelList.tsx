@@ -8,11 +8,12 @@ import {
 } from '@ant-design/icons'
 import CustomCollapse from '@renderer/components/CustomCollapse'
 import { HStack } from '@renderer/components/Layout'
-import ModelTagsWithLabel from '@renderer/components/ModelTagsWithLabel'
+import ModelIdWithTags from '@renderer/components/ModelIdWithTags'
 import { getModelLogo } from '@renderer/config/models'
 import { PROVIDER_CONFIG } from '@renderer/config/providers'
 import { useAssistants, useDefaultModel } from '@renderer/hooks/useAssistant'
 import { useProvider } from '@renderer/hooks/useProvider'
+import NewApiAddModelPopup from '@renderer/pages/settings/ProviderSettings/NewApiAddModelPopup'
 import { ModelCheckStatus } from '@renderer/services/HealthCheckService'
 import { useAppDispatch } from '@renderer/store'
 import { setModel } from '@renderer/store/assistants'
@@ -29,18 +30,6 @@ import { SettingHelpLink, SettingHelpText, SettingHelpTextRow } from '..'
 import AddModelPopup from './AddModelPopup'
 import EditModelsPopup from './EditModelsPopup'
 import ModelEditContent from './ModelEditContent'
-
-const STATUS_COLORS = {
-  success: '#52c41a',
-  error: '#ff4d4f',
-  warning: '#faad14'
-}
-
-interface ModelListProps {
-  providerId: string
-  modelStatuses?: ModelStatus[]
-  searchText?: string
-}
 
 export interface ModelStatus {
   model: Model
@@ -79,7 +68,7 @@ function useModelStatusRendering() {
         return (
           <div>
             <strong>{statusTitle}</strong>
-            {status.error && <div style={{ marginTop: 5, color: STATUS_COLORS.error }}>{status.error}</div>}
+            {status.error && <div style={{ marginTop: 5, color: 'var(--color-status-error)' }}>{status.error}</div>}
           </div>
         )
       }
@@ -98,7 +87,10 @@ function useModelStatusRendering() {
                 return (
                   <li
                     key={idx}
-                    style={{ marginBottom: '5px', color: kr.isValid ? STATUS_COLORS.success : STATUS_COLORS.error }}>
+                    style={{
+                      marginBottom: '5px',
+                      color: kr.isValid ? 'var(--color-status-success)' : 'var(--color-status-error)'
+                    }}>
                     {maskedKey}: {kr.isValid ? t('settings.models.check.passed') : t('settings.models.check.failed')}
                     {kr.error && !kr.isValid && ` (${kr.error})`}
                     {kr.latency && kr.isValid && ` (${formatLatency(kr.latency)})`}
@@ -121,7 +113,7 @@ function useModelStatusRendering() {
 
     if (modelStatus.checking) {
       return (
-        <StatusIndicator type="checking">
+        <StatusIndicator $type="checking">
           <LoadingOutlined spin />
         </StatusIndicator>
       )
@@ -150,8 +142,8 @@ function useModelStatusRendering() {
     }
 
     return (
-      <Tooltip title={renderKeyCheckResultTooltip(modelStatus)}>
-        <StatusIndicator type={statusType}>{icon}</StatusIndicator>
+      <Tooltip title={renderKeyCheckResultTooltip(modelStatus)} mouseEnterDelay={0.5}>
+        <StatusIndicator $type={statusType}>{icon}</StatusIndicator>
       </Tooltip>
     )
   }
@@ -167,6 +159,15 @@ function useModelStatusRendering() {
   return { renderStatusIndicator, renderLatencyText }
 }
 
+interface ModelListProps {
+  providerId: string
+  modelStatuses?: ModelStatus[]
+  searchText?: string
+}
+
+/**
+ * Model list component
+ */
 const ModelList: React.FC<ModelListProps> = ({ providerId, modelStatuses = [], searchText = '' }) => {
   const { t } = useTranslation()
   const { provider, updateProvider, models, removeModel } = useProvider(providerId)
@@ -199,10 +200,13 @@ const ModelList: React.FC<ModelListProps> = ({ providerId, modelStatuses = [], s
     EditModelsPopup.show({ provider })
   }, [provider])
 
-  const onAddModel = useCallback(
-    () => AddModelPopup.show({ title: t('settings.models.add.add_model'), provider }),
-    [provider, t]
-  )
+  const onAddModel = useCallback(() => {
+    if (provider.id === 'new-api') {
+      NewApiAddModelPopup.show({ title: t('settings.models.add.add_model'), provider })
+    } else {
+      AddModelPopup.show({ title: t('settings.models.add.add_model'), provider })
+    }
+  }, [provider, t])
 
   const onEditModel = useCallback((model: Model) => {
     setEditingModel(model)
@@ -252,16 +256,12 @@ const ModelList: React.FC<ModelListProps> = ({ providerId, modelStatuses = [], s
                 </Flex>
               }
               extra={
-                <Tooltip title={t('settings.models.manage.remove_whole_group')}>
+                <Tooltip title={t('settings.models.manage.remove_whole_group')} mouseEnterDelay={0.5}>
                   <Button
                     type="text"
                     className="toolbar-item"
                     icon={<MinusOutlined />}
-                    onClick={() =>
-                      modelGroups[group]
-                        .filter((model) => provider.models.some((m) => m.id === model.id))
-                        .forEach((model) => removeModel(model))
-                    }
+                    onClick={() => modelGroups[group].forEach((model) => removeModel(model))}
                   />
                 </Tooltip>
               }>
@@ -276,25 +276,14 @@ const ModelList: React.FC<ModelListProps> = ({ providerId, modelStatuses = [], s
                         <Avatar src={getModelLogo(model.id)} style={{ width: 26, height: 26 }}>
                           {model?.name?.[0]?.toUpperCase()}
                         </Avatar>
-                        <ListItemName>
-                          <Tooltip
-                            styles={{
-                              root: {
-                                width: 'auto',
-                                maxWidth: '500px'
-                              }
-                            }}
-                            destroyTooltipOnHide
-                            title={
-                              <Typography.Text style={{ color: 'white' }} copyable={{ text: model.id }}>
-                                {model.id}
-                              </Typography.Text>
-                            }
-                            placement="top">
-                            <NameSpan>{model.name}</NameSpan>
-                          </Tooltip>
-                          <ModelTagsWithLabel model={model} size={11} style={{ flexShrink: 0 }} />
-                        </ListItemName>
+                        <ModelIdWithTags
+                          model={model}
+                          style={{
+                            flex: 1,
+                            width: 0,
+                            overflow: 'hidden'
+                          }}
+                        />
                       </HStack>
                       <Flex gap={4} align="center">
                         {renderLatencyText(modelStatus)}
@@ -319,17 +308,21 @@ const ModelList: React.FC<ModelListProps> = ({ providerId, modelStatuses = [], s
             </CustomCollapse>
           </CustomCollapseWrapper>
         ))}
-        {docsWebsite && (
+        {(docsWebsite || modelsWebsite) && (
           <SettingHelpTextRow>
             <SettingHelpText>{t('settings.provider.docs_check')} </SettingHelpText>
-            <SettingHelpLink target="_blank" href={docsWebsite}>
-              {t(`provider.${provider.id}`) + ' '}
-              {t('common.docs')}
-            </SettingHelpLink>
-            <SettingHelpText>{t('common.and')}</SettingHelpText>
-            <SettingHelpLink target="_blank" href={modelsWebsite}>
-              {t('common.models')}
-            </SettingHelpLink>
+            {docsWebsite && (
+              <SettingHelpLink target="_blank" href={docsWebsite}>
+                {t(`provider.${provider.id}`) + ' '}
+                {t('common.docs')}
+              </SettingHelpLink>
+            )}
+            {docsWebsite && modelsWebsite && <SettingHelpText>{t('common.and')}</SettingHelpText>}
+            {modelsWebsite && (
+              <SettingHelpLink target="_blank" href={modelsWebsite}>
+                {t('common.models')}
+              </SettingHelpLink>
+            )}
             <SettingHelpText>{t('settings.provider.docs_more_details')}</SettingHelpText>
           </SettingHelpTextRow>
         )}
@@ -344,6 +337,7 @@ const ModelList: React.FC<ModelListProps> = ({ providerId, modelStatuses = [], s
       </Flex>
       {models.map((model) => (
         <ModelEditContent
+          provider={provider}
           model={model}
           onUpdateModel={onUpdateModel}
           open={editingModel?.id === model.id}
@@ -378,44 +372,19 @@ const ListItem = styled.div`
   line-height: 1;
 `
 
-const ListItemName = styled.div`
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-  color: var(--color-text);
-  font-size: 14px;
-  line-height: 1;
-  font-weight: 600;
-  min-width: 0;
-  overflow: hidden;
-  flex: 1;
-  width: 0;
-`
-
-const NameSpan = styled.span`
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  cursor: help;
-  font-family: 'Ubuntu';
-  line-height: 30px;
-  font-size: 14px;
-`
-
-const StatusIndicator = styled.div<{ type: string }>`
+const StatusIndicator = styled.div<{ $type: string }>`
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
   color: ${(props) => {
-    switch (props.type) {
+    switch (props.$type) {
       case 'success':
-        return STATUS_COLORS.success
+        return 'var(--color-status-success)'
       case 'error':
-        return STATUS_COLORS.error
+        return 'var(--color-status-error)'
       case 'partial':
-        return STATUS_COLORS.warning
+        return 'var(--color-status-warning)'
       default:
         return 'var(--color-text)'
     }

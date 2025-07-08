@@ -1,6 +1,7 @@
 import { CheckOutlined, FolderOutlined, LoadingOutlined, SyncOutlined, WarningOutlined } from '@ant-design/icons'
 import { HStack } from '@renderer/components/Layout'
 import NutstorePathPopup from '@renderer/components/Popups/NutsorePathPopup'
+import Selector from '@renderer/components/Selector'
 import { WebdavBackupManager } from '@renderer/components/WebdavBackupManager'
 import { useWebdavBackupModal, WebdavBackupModal } from '@renderer/components/WebdavModals'
 import { useTheme } from '@renderer/context/ThemeProvider'
@@ -17,25 +18,31 @@ import { useAppDispatch, useAppSelector } from '@renderer/store'
 import {
   setNutstoreAutoSync,
   setNutstorePath,
+  setNutstoreSkipBackupFile,
   setNutstoreSyncInterval,
   setNutstoreToken
 } from '@renderer/store/nutstore'
 import { modalConfirm } from '@renderer/utils'
 import { NUTSTORE_HOST } from '@shared/config/nutstore'
-import { Button, Input, Select, Tooltip, Typography } from 'antd'
+import { Button, Input, Switch, Tooltip, Typography } from 'antd'
 import dayjs from 'dayjs'
 import { FC, useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { type FileStat } from 'webdav'
 
-import { SettingDivider, SettingGroup, SettingRow, SettingRowTitle, SettingTitle } from '..'
+import { SettingDivider, SettingGroup, SettingHelpText, SettingRow, SettingRowTitle, SettingTitle } from '..'
 
 const NutstoreSettings: FC = () => {
   const { theme } = useTheme()
   const { t } = useTranslation()
-  const { nutstoreToken, nutstorePath, nutstoreSyncInterval, nutstoreAutoSync, nutstoreSyncState } = useAppSelector(
-    (state) => state.nutstore
-  )
+  const {
+    nutstoreToken,
+    nutstorePath,
+    nutstoreSyncInterval,
+    nutstoreAutoSync,
+    nutstoreSyncState,
+    nutstoreSkipBackupFile
+  } = useAppSelector((state) => state.nutstore)
 
   const dispatch = useAppDispatch()
 
@@ -47,6 +54,8 @@ const NutstoreSettings: FC = () => {
   const [nsConnected, setNsConnected] = useState<boolean>(false)
 
   const [syncInterval, setSyncInterval] = useState<number>(nutstoreSyncInterval)
+
+  const [nutSkipBackupFile, setNutSkipBackupFile] = useState<boolean>(nutstoreSkipBackupFile)
 
   const nutstoreSSOHandler = useNutstoreSSO()
 
@@ -86,6 +95,7 @@ const NutstoreSettings: FC = () => {
     if (confirmedLogout) {
       dispatch(setNutstoreToken(''))
       dispatch(setNutstorePath(''))
+      dispatch(setNutstoreAutoSync(false))
       setNutstoreUsername('')
       setStoragePath(undefined)
     }
@@ -126,6 +136,11 @@ const NutstoreSettings: FC = () => {
       dispatch(setNutstoreAutoSync(true))
       startNutstoreAutoSync()
     }
+  }
+
+  const onSkipBackupFilesChange = (value: boolean) => {
+    setNutSkipBackupFile(value)
+    dispatch(setNutstoreSkipBackupFile(value))
   }
 
   const handleClickPathChange = async () => {
@@ -265,18 +280,23 @@ const NutstoreSettings: FC = () => {
           <SettingDivider />
           <SettingRow>
             <SettingRowTitle>{t('settings.data.webdav.autoSync')}</SettingRowTitle>
-            <Select value={syncInterval} onChange={onSyncIntervalChange} style={{ width: 120 }}>
-              <Select.Option value={0}>{t('settings.data.webdav.autoSync.off')}</Select.Option>
-              <Select.Option value={1}>{t('settings.data.webdav.minute_interval', { count: 1 })}</Select.Option>
-              <Select.Option value={5}>{t('settings.data.webdav.minute_interval', { count: 5 })}</Select.Option>
-              <Select.Option value={15}>{t('settings.data.webdav.minute_interval', { count: 15 })}</Select.Option>
-              <Select.Option value={30}>{t('settings.data.webdav.minute_interval', { count: 30 })}</Select.Option>
-              <Select.Option value={60}>{t('settings.data.webdav.hour_interval', { count: 1 })}</Select.Option>
-              <Select.Option value={120}>{t('settings.data.webdav.hour_interval', { count: 2 })}</Select.Option>
-              <Select.Option value={360}>{t('settings.data.webdav.hour_interval', { count: 6 })}</Select.Option>
-              <Select.Option value={720}>{t('settings.data.webdav.hour_interval', { count: 12 })}</Select.Option>
-              <Select.Option value={1440}>{t('settings.data.webdav.hour_interval', { count: 24 })}</Select.Option>
-            </Select>
+            <Selector
+              size={14}
+              value={syncInterval}
+              onChange={onSyncIntervalChange}
+              options={[
+                { label: t('settings.data.webdav.autoSync.off'), value: 0 },
+                { label: t('settings.data.webdav.minute_interval', { count: 1 }), value: 1 },
+                { label: t('settings.data.webdav.minute_interval', { count: 5 }), value: 5 },
+                { label: t('settings.data.webdav.minute_interval', { count: 15 }), value: 15 },
+                { label: t('settings.data.webdav.minute_interval', { count: 30 }), value: 30 },
+                { label: t('settings.data.webdav.hour_interval', { count: 1 }), value: 60 },
+                { label: t('settings.data.webdav.hour_interval', { count: 2 }), value: 120 },
+                { label: t('settings.data.webdav.hour_interval', { count: 6 }), value: 360 },
+                { label: t('settings.data.webdav.hour_interval', { count: 12 }), value: 720 },
+                { label: t('settings.data.webdav.hour_interval', { count: 24 }), value: 1440 }
+              ]}
+            />
           </SettingRow>
           {nutstoreAutoSync && syncInterval > 0 && (
             <>
@@ -287,6 +307,14 @@ const NutstoreSettings: FC = () => {
               </SettingRow>
             </>
           )}
+          <SettingDivider />
+          <SettingRow>
+            <SettingRowTitle>{t('settings.data.backup.skip_file_data_title')}</SettingRowTitle>
+            <Switch checked={nutSkipBackupFile} onChange={onSkipBackupFilesChange} />
+          </SettingRow>
+          <SettingRow>
+            <SettingHelpText>{t('settings.data.backup.skip_file_data_help')}</SettingHelpText>
+          </SettingRow>
         </>
       )}
       <>

@@ -3,6 +3,7 @@ import { useDefaultModel } from '@renderer/hooks/useAssistant'
 import { useSettings } from '@renderer/hooks/useSettings'
 import { fetchTranslate } from '@renderer/services/ApiService'
 import { getDefaultTranslateAssistant } from '@renderer/services/AssistantService'
+import { getLanguageByLangcode } from '@renderer/utils/translate'
 import { Modal, ModalProps } from 'antd'
 import TextArea from 'antd/es/input/TextArea'
 import { TextAreaProps } from 'antd/lib/input'
@@ -18,6 +19,7 @@ interface ShowParams {
   text: string
   textareaProps?: TextAreaProps
   modalProps?: ModalProps
+  showTranslate?: boolean
   children?: (props: { onOk?: () => void; onCancel?: () => void }) => React.ReactNode
 }
 
@@ -25,7 +27,14 @@ interface Props extends ShowParams {
   resolve: (data: any) => void
 }
 
-const PopupContainer: React.FC<Props> = ({ text, textareaProps, modalProps, resolve, children }) => {
+const PopupContainer: React.FC<Props> = ({
+  text,
+  textareaProps,
+  modalProps,
+  resolve,
+  children,
+  showTranslate = true
+}) => {
   const [open, setOpen] = useState(true)
   const { t } = useTranslation()
   const [textValue, setTextValue] = useState(text)
@@ -103,7 +112,7 @@ const PopupContainer: React.FC<Props> = ({ text, textareaProps, modalProps, reso
     }
 
     try {
-      const assistant = getDefaultTranslateAssistant(targetLanguage, textValue)
+      const assistant = getDefaultTranslateAssistant(getLanguageByLangcode(targetLanguage), textValue)
       const translatedText = await fetchTranslate({ content: textValue, assistant })
       if (isMounted.current) {
         setTextValue(translatedText)
@@ -148,12 +157,14 @@ const PopupContainer: React.FC<Props> = ({ text, textareaProps, modalProps, reso
           onInput={resizeTextArea}
           onChange={(e) => setTextValue(e.target.value)}
         />
-        <TranslateButton
-          onClick={handleTranslate}
-          aria-label="Translate text"
-          disabled={isTranslating || !textValue.trim()}>
-          {isTranslating ? <LoadingOutlined spin /> : <Languages size={16} />}
-        </TranslateButton>
+        {showTranslate && (
+          <TranslateButton
+            onClick={handleTranslate}
+            aria-label="Translate text"
+            disabled={isTranslating || !textValue.trim()}>
+            {isTranslating ? <LoadingOutlined spin /> : <Languages size={16} />}
+          </TranslateButton>
+        )}
       </TextAreaContainer>
       <ChildrenContainer>{children && children({ onOk, onCancel })}</ChildrenContainer>
     </Modal>

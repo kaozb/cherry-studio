@@ -1,6 +1,6 @@
-import { getFilesDir, getFileType, getTempDir } from '@main/utils/file'
+import { getFilesDir, getFileType, getTempDir, readTextFileWithAutoEncoding } from '@main/utils/file'
 import { documentExts, imageExts, MB } from '@shared/config/constant'
-import { FileType } from '@types'
+import { FileMetadata } from '@types'
 import * as crypto from 'crypto'
 import {
   dialog,
@@ -15,9 +15,11 @@ import * as fs from 'fs'
 import { writeFileSync } from 'fs'
 import { readFile } from 'fs/promises'
 import officeParser from 'officeparser'
+import { getDocument } from 'officeparser/pdfjs-dist-build/pdf.js'
 import * as path from 'path'
 import { chdir } from 'process'
 import { v4 as uuidv4 } from 'uuid'
+import WordExtractor from 'word-extractor'
 
 class FileStorage {
   private storageDir = getFilesDir()
@@ -51,8 +53,9 @@ class FileStorage {
     })
   }
 
-  findDuplicateFile = async (filePath: string): Promise<FileType | null> => {
+  findDuplicateFile = async (filePath: string): Promise<FileMetadata | null> => {
     const stats = fs.statSync(filePath)
+    console.log('stats', stats, filePath)
     const fileSize = stats.size
 
     const files = await fs.promises.readdir(this.storageDir)
@@ -90,7 +93,7 @@ class FileStorage {
   public selectFile = async (
     _: Electron.IpcMainInvokeEvent,
     options?: OpenDialogOptions
-  ): Promise<FileType[] | null> => {
+  ): Promise<FileMetadata[] | null> => {
     const defaultOptions: OpenDialogOptions = {
       properties: ['openFile']
     }
@@ -149,7 +152,7 @@ class FileStorage {
     }
   }
 
-  public uploadFile = async (_: Electron.IpcMainInvokeEvent, file: FileType): Promise<FileType> => {
+  public uploadFile = async (_: Electron.IpcMainInvokeEvent, file: FileMetadata): Promise<FileMetadata> => {
     const duplicateFile = await this.findDuplicateFile(file.path)
 
     if (duplicateFile) {
@@ -173,7 +176,7 @@ class FileStorage {
     const stats = await fs.promises.stat(destPath)
     const fileType = getFileType(ext)
 
-    const fileMetadata: FileType = {
+    const fileMetadata: FileMetadata = {
       id: uuid,
       origin_name,
       name: uuid + ext,
@@ -185,10 +188,12 @@ class FileStorage {
       count: 1
     }
 
+    logger.info('[FileStorage] File uploaded:', fileMetadata)
+
     return fileMetadata
   }
 
-  public getFile = async (_: Electron.IpcMainInvokeEvent, filePath: string): Promise<FileType | null> => {
+  public getFile = async (_: Electron.IpcMainInvokeEvent, filePath: string): Promise<FileMetadata | null> => {
     if (!fs.existsSync(filePath)) {
       return null
     }
@@ -197,7 +202,7 @@ class FileStorage {
     const ext = path.extname(filePath)
     const fileType = getFileType(ext)
 
-    const fileInfo: FileType = {
+    const fileInfo: FileMetadata = {
       id: uuidv4(),
       origin_name: path.basename(filePath),
       name: path.basename(filePath),
@@ -213,16 +218,36 @@ class FileStorage {
   }
 
   public deleteFile = async (_: Electron.IpcMainInvokeEvent, id: string): Promise<void> => {
+    if (!fs.existsSync(path.join(this.storageDir, id))) {
+      return
+    }
     await fs.promises.unlink(path.join(this.storageDir, id))
+  }
+
+  public deleteDir = async (_: Electron.IpcMainInvokeEvent, id: string): Promise<void> => {
+    if (!fs.existsSync(path.join(this.storageDir, id))) {
+      return
+    }
+    await fs.promises.rm(path.join(this.storageDir, id), { recursive: true })
   }
 
   public readFile = async (_: Electron.IpcMainInvokeEvent, id: string): Promise<string> => {
     const filePath = path.join(this.storageDir, id)
 
-    if (documentExts.includes(path.extname(filePath))) {
+    const fileExtension = path.extname(filePath)
+
+    if (documentExts.includes(fileExtension)) {
       const originalCwd = process.cwd()
       try {
         chdir(this.tempDir)
+
+        if (fileExtension === '.doc') {
+          const extractor = new WordExtractor()
+          const extracted = await extractor.extract(filePath)
+          chdir(originalCwd)
+          return extracted.getBody()
+        }
+
         const data = await officeParser.parseOfficeAsync(filePath)
         chdir(originalCwd)
         return data
@@ -233,15 +258,21 @@ class FileStorage {
       }
     }
 
-    return fs.readFileSync(filePath, 'utf8')
+    try {
+      const result = readTextFileWithAutoEncoding(filePath)
+      return result
+    } catch (error) {
+      logger.error(error)
+      return 'failed to read file'
+    }
   }
 
   public createTempFile = async (_: Electron.IpcMainInvokeEvent, fileName: string): Promise<string> => {
     if (!fs.existsSync(this.tempDir)) {
       fs.mkdirSync(this.tempDir, { recursive: true })
     }
-    const tempFilePath = path.join(this.tempDir, `temp_file_${uuidv4()}_${fileName}`)
-    return tempFilePath
+
+    return path.join(this.tempDir, `temp_file_${uuidv4()}_${fileName}`)
   }
 
   public writeFile = async (
@@ -268,12 +299,67 @@ class FileStorage {
     }
   }
 
+  public saveBase64Image = async (_: Electron.IpcMainInvokeEvent, base64Data: string): Promise<FileMetadata> => {
+    try {
+      if (!base64Data) {
+        throw new Error('Base64 data is required')
+      }
+
+      // 移除 base64 头部信息（如果存在）
+      const base64String = base64Data.replace(/^data:.*;base64,/, '')
+      const buffer = Buffer.from(base64String, 'base64')
+      const uuid = uuidv4()
+      const ext = '.png'
+      const destPath = path.join(this.storageDir, uuid + ext)
+
+      logger.info('[FileStorage] Saving base64 image:', {
+        storageDir: this.storageDir,
+        destPath,
+        bufferSize: buffer.length
+      })
+
+      // 确保目录存在
+      if (!fs.existsSync(this.storageDir)) {
+        fs.mkdirSync(this.storageDir, { recursive: true })
+      }
+
+      await fs.promises.writeFile(destPath, buffer)
+
+      const fileMetadata: FileMetadata = {
+        id: uuid,
+        origin_name: uuid + ext,
+        name: uuid + ext,
+        path: destPath,
+        created_at: new Date().toISOString(),
+        size: buffer.length,
+        ext: ext.slice(1),
+        type: getFileType(ext),
+        count: 1
+      }
+
+      return fileMetadata
+    } catch (error) {
+      logger.error('[FileStorage] Failed to save base64 image:', error)
+      throw error
+    }
+  }
+
   public base64File = async (_: Electron.IpcMainInvokeEvent, id: string): Promise<{ data: string; mime: string }> => {
     const filePath = path.join(this.storageDir, id)
     const buffer = await fs.promises.readFile(filePath)
     const base64 = buffer.toString('base64')
     const mime = `application/${path.extname(filePath).slice(1)}`
     return { data: base64, mime }
+  }
+
+  public pdfPageCount = async (_: Electron.IpcMainInvokeEvent, id: string): Promise<number> => {
+    const filePath = path.join(this.storageDir, id)
+    const buffer = await fs.promises.readFile(filePath)
+
+    const doc = await getDocument({ data: buffer }).promise
+    const pages = doc.numPages
+    await doc.destroy()
+    return pages
   }
 
   public binaryImage = async (_: Electron.IpcMainInvokeEvent, id: string): Promise<{ data: Buffer; mime: string }> => {
@@ -296,7 +382,7 @@ class FileStorage {
   public open = async (
     _: Electron.IpcMainInvokeEvent,
     options: OpenDialogOptions
-  ): Promise<{ fileName: string; filePath: string; content: Buffer } | null> => {
+  ): Promise<{ fileName: string; filePath: string; content?: Buffer; size: number } | null> => {
     try {
       const result: OpenDialogReturnValue = await dialog.showOpenDialog({
         title: '打开文件',
@@ -308,8 +394,16 @@ class FileStorage {
       if (!result.canceled && result.filePaths.length > 0) {
         const filePath = result.filePaths[0]
         const fileName = filePath.split('/').pop() || ''
-        const content = await readFile(filePath)
-        return { fileName, filePath, content }
+        const stats = await fs.promises.stat(filePath)
+
+        // If the file is less than 2GB, read the content
+        if (stats.size < 2 * 1024 * 1024 * 1024) {
+          const content = await readFile(filePath)
+          return { fileName, filePath, content, size: stats.size }
+        }
+
+        // For large files, only return file information, do not read content
+        return { fileName, filePath, size: stats.size }
       }
 
       return null
@@ -328,7 +422,7 @@ class FileStorage {
     fileName: string,
     content: string,
     options?: SaveDialogOptions
-  ): Promise<string | null> => {
+  ): Promise<string> => {
     try {
       const result: SaveDialogReturnValue = await dialog.showSaveDialog({
         title: '保存文件',
@@ -336,14 +430,18 @@ class FileStorage {
         ...options
       })
 
+      if (result.canceled) {
+        return Promise.reject(new Error('User canceled the save dialog'))
+      }
+
       if (!result.canceled && result.filePath) {
         await writeFileSync(result.filePath, content, { encoding: 'utf-8' })
       }
 
       return result.filePath
-    } catch (err) {
+    } catch (err: any) {
       logger.error('[IPC - Error]', 'An error occurred saving the file:', err)
-      return null
+      return Promise.reject('An error occurred saving the file: ' + err?.message)
     }
   }
 
@@ -382,7 +480,11 @@ class FileStorage {
     }
   }
 
-  public downloadFile = async (_: Electron.IpcMainInvokeEvent, url: string): Promise<FileType> => {
+  public downloadFile = async (
+    _: Electron.IpcMainInvokeEvent,
+    url: string,
+    isUseContentType?: boolean
+  ): Promise<FileMetadata> => {
     try {
       const response = await fetch(url)
       if (!response.ok) {
@@ -407,7 +509,7 @@ class FileStorage {
       }
 
       // 如果文件名没有后缀，根据Content-Type添加后缀
-      if (!filename.includes('.')) {
+      if (isUseContentType || !filename.includes('.')) {
         const contentType = response.headers.get('Content-Type')
         const ext = this.getExtensionFromMimeType(contentType)
         filename += ext
@@ -424,7 +526,7 @@ class FileStorage {
       const stats = await fs.promises.stat(destPath)
       const fileType = getFileType(ext)
 
-      const fileMetadata: FileType = {
+      const fileMetadata: FileMetadata = {
         id: uuid,
         origin_name: filename,
         name: uuid + ext,

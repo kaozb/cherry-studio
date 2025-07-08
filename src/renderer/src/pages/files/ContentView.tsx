@@ -1,15 +1,13 @@
 import FileManager from '@renderer/services/FileManager'
-import { FileType, FileTypes } from '@renderer/types'
+import { FileMetadata, FileTypes } from '@renderer/types'
 import { formatFileSize } from '@renderer/utils'
 import { Col, Image, Row, Spin, Table } from 'antd'
 import React, { memo } from 'react'
 import styled from 'styled-components'
 
-import GeminiFiles from './GeminiFiles'
-
 interface ContentViewProps {
   id: FileTypes | 'all' | string
-  files?: FileType[]
+  files?: FileMetadata[]
   dataSource?: any[]
   columns: any[]
 }
@@ -43,10 +41,6 @@ const ContentView: React.FC<ContentViewProps> = ({ id, files, dataSource, column
         </Row>
       </Image.PreviewGroup>
     )
-  }
-
-  if (id.startsWith('gemini_')) {
-    return <GeminiFiles id={id.replace('gemini_', '') as string} />
   }
 
   return (

@@ -14,6 +14,14 @@ type LlmSettings = {
   gpustack: {
     keepAliveTime: number
   }
+  vertexai: {
+    serviceAccount: {
+      privateKey: string
+      clientEmail: string
+    }
+    projectId: string
+    location: string
+  }
 }
 
 export interface LlmState {
@@ -21,6 +29,7 @@ export interface LlmState {
   defaultModel: Model
   topicNamingModel: Model
   translateModel: Model
+  quickAssistantId: string
   settings: LlmSettings
 }
 
@@ -76,21 +85,11 @@ export const INITIAL_PROVIDERS: Provider[] = [
     enabled: false
   },
   {
-    id: 'openrouter',
-    name: 'OpenRouter',
-    type: 'openai',
-    apiKey: '',
-    apiHost: 'https://openrouter.ai/api/v1/',
-    models: SYSTEM_MODELS.openrouter,
-    isSystem: true,
-    enabled: false
-  },
-  {
     id: 'ppio',
     name: 'PPIO',
     type: 'openai',
     apiKey: '',
-    apiHost: 'https://api.ppinfra.com/v3/openai',
+    apiHost: 'https://api.ppinfra.com/v3/openai/',
     models: SYSTEM_MODELS.ppio,
     isSystem: true,
     enabled: false
@@ -102,16 +101,6 @@ export const INITIAL_PROVIDERS: Provider[] = [
     apiKey: '',
     apiHost: 'https://deepseek.alayanew.com',
     models: SYSTEM_MODELS.alayanew,
-    isSystem: true,
-    enabled: false
-  },
-  {
-    id: 'infini',
-    name: 'Infini',
-    type: 'openai',
-    apiKey: '',
-    apiHost: 'https://cloud.infini-ai.com/maas',
-    models: SYSTEM_MODELS.infini,
     isSystem: true,
     enabled: false
   },
@@ -136,12 +125,72 @@ export const INITIAL_PROVIDERS: Provider[] = [
     enabled: false
   },
   {
-    id: 'o3',
-    name: 'O3',
+    id: 'burncloud',
+    name: 'BurnCloud',
     type: 'openai',
     apiKey: '',
-    apiHost: 'https://api.o3.fan',
-    models: SYSTEM_MODELS.o3,
+    apiHost: 'https://ai.burncloud.com',
+    models: SYSTEM_MODELS.burncloud,
+    isSystem: true,
+    enabled: false
+  },
+  {
+    id: 'tokenflux',
+    name: 'TokenFlux',
+    type: 'openai',
+    apiKey: '',
+    apiHost: 'https://tokenflux.ai',
+    models: SYSTEM_MODELS.tokenflux,
+    isSystem: true,
+    enabled: false
+  },
+  {
+    id: '302ai',
+    name: '302.AI',
+    type: 'openai',
+    apiKey: '',
+    apiHost: 'https://api.302.ai',
+    models: SYSTEM_MODELS['302ai'],
+    isSystem: true,
+    enabled: false
+  },
+  {
+    id: 'cephalon',
+    name: 'Cephalon',
+    type: 'openai',
+    apiKey: '',
+    apiHost: 'https://cephalon.cloud/user-center/v1/model',
+    models: SYSTEM_MODELS.cephalon,
+    isSystem: true,
+    enabled: false
+  },
+  {
+    id: 'lanyun',
+    name: 'LANYUN',
+    type: 'openai',
+    apiKey: '',
+    apiHost: 'https://maas-api.lanyun.net',
+    models: SYSTEM_MODELS.lanyun,
+    isSystem: true,
+    enabled: false
+  },
+  {
+    id: 'ph8',
+    name: 'PH8',
+    type: 'openai',
+    apiKey: '',
+    apiHost: 'https://ph8.co',
+    models: SYSTEM_MODELS.ph8,
+    isSystem: true,
+    enabled: false
+  },
+  {
+    id: 'openrouter',
+    name: 'OpenRouter',
+    type: 'openai',
+    apiKey: '',
+    apiHost: 'https://openrouter.ai/api/v1/',
+    models: SYSTEM_MODELS.openrouter,
     isSystem: true,
     enabled: false
   },
@@ -152,6 +201,16 @@ export const INITIAL_PROVIDERS: Provider[] = [
     apiKey: '',
     apiHost: 'http://localhost:11434',
     models: SYSTEM_MODELS.ollama,
+    isSystem: true,
+    enabled: false
+  },
+  {
+    id: 'new-api',
+    name: 'New API',
+    type: 'openai',
+    apiKey: '',
+    apiHost: 'http://localhost:3000',
+    models: SYSTEM_MODELS['new-api'],
     isSystem: true,
     enabled: false
   },
@@ -204,17 +263,19 @@ export const INITIAL_PROVIDERS: Provider[] = [
     apiHost: 'https://generativelanguage.googleapis.com',
     models: SYSTEM_MODELS.gemini,
     isSystem: true,
-    enabled: false
+    enabled: false,
+    isVertex: false
   },
   {
-    id: 'zhipu',
-    name: 'ZhiPu',
-    type: 'openai',
+    id: 'vertexai',
+    name: 'VertexAI',
+    type: 'vertexai',
     apiKey: '',
-    apiHost: 'https://open.bigmodel.cn/api/paas/v4/',
-    models: SYSTEM_MODELS.zhipu,
+    apiHost: 'https://aiplatform.googleapis.com',
+    models: [],
     isSystem: true,
-    enabled: false
+    enabled: false,
+    isVertex: true
   },
   {
     id: 'github',
@@ -236,6 +297,16 @@ export const INITIAL_PROVIDERS: Provider[] = [
     isSystem: true,
     enabled: false,
     isAuthed: false
+  },
+  {
+    id: 'zhipu',
+    name: 'ZhiPu',
+    type: 'openai',
+    apiKey: '',
+    apiHost: 'https://open.bigmodel.cn/api/paas/v4/',
+    models: SYSTEM_MODELS.zhipu,
+    isSystem: true,
+    enabled: false
   },
   {
     id: 'yi',
@@ -298,6 +369,16 @@ export const INITIAL_PROVIDERS: Provider[] = [
     enabled: false
   },
   {
+    id: 'infini',
+    name: 'Infini',
+    type: 'openai',
+    apiKey: '',
+    apiHost: 'https://cloud.infini-ai.com/maas',
+    models: SYSTEM_MODELS.infini,
+    isSystem: true,
+    enabled: false
+  },
+  {
     id: 'minimax',
     name: 'MiniMax',
     type: 'openai',
@@ -334,26 +415,6 @@ export const INITIAL_PROVIDERS: Provider[] = [
     apiKey: '',
     apiHost: 'https://api.fireworks.ai/inference',
     models: SYSTEM_MODELS.fireworks,
-    isSystem: true,
-    enabled: false
-  },
-  {
-    id: 'zhinao',
-    name: 'zhinao',
-    type: 'openai',
-    apiKey: '',
-    apiHost: 'https://api.360.cn',
-    models: SYSTEM_MODELS.zhinao,
-    isSystem: true,
-    enabled: false
-  },
-  {
-    id: 'hunyuan',
-    name: 'hunyuan',
-    type: 'openai',
-    apiKey: '',
-    apiHost: 'https://api.hunyuan.cloud.tencent.com',
-    models: SYSTEM_MODELS.hunyuan,
     isSystem: true,
     enabled: false
   },
@@ -408,16 +469,6 @@ export const INITIAL_PROVIDERS: Provider[] = [
     enabled: false
   },
   {
-    id: 'gitee-ai',
-    name: 'gitee ai',
-    type: 'openai',
-    apiKey: '',
-    apiHost: 'https://ai.gitee.com',
-    models: SYSTEM_MODELS['gitee-ai'],
-    isSystem: true,
-    enabled: false
-  },
-  {
     id: 'perplexity',
     name: 'Perplexity',
     type: 'openai',
@@ -444,6 +495,16 @@ export const INITIAL_PROVIDERS: Provider[] = [
     apiKey: '',
     apiHost: 'https://wishub-x1.ctyun.cn',
     models: SYSTEM_MODELS.xirang,
+    isSystem: true,
+    enabled: false
+  },
+  {
+    id: 'hunyuan',
+    name: 'hunyuan',
+    type: 'openai',
+    apiKey: '',
+    apiHost: 'https://api.hunyuan.cloud.tencent.com',
+    models: SYSTEM_MODELS.hunyuan,
     isSystem: true,
     enabled: false
   },
@@ -489,10 +550,11 @@ export const INITIAL_PROVIDERS: Provider[] = [
   }
 ]
 
-const initialState: LlmState = {
-  defaultModel: SYSTEM_MODELS.silicon[1],
-  topicNamingModel: SYSTEM_MODELS.silicon[2],
-  translateModel: SYSTEM_MODELS.silicon[3],
+export const initialState: LlmState = {
+  defaultModel: SYSTEM_MODELS.defaultModel[0],
+  topicNamingModel: SYSTEM_MODELS.defaultModel[1],
+  translateModel: SYSTEM_MODELS.defaultModel[2],
+  quickAssistantId: '',
   providers: INITIAL_PROVIDERS,
   settings: {
     ollama: {
@@ -503,6 +565,14 @@ const initialState: LlmState = {
     },
     gpustack: {
       keepAliveTime: 0
+    },
+    vertexai: {
+      serviceAccount: {
+        privateKey: '',
+        clientEmail: ''
+      },
+      projectId: '',
+      location: ''
     }
   }
 }
@@ -554,8 +624,11 @@ const llmSlice = createSlice({
   name: 'llm',
   initialState: isLocalAi ? getIntegratedInitialState() : initialState,
   reducers: {
-    updateProvider: (state, action: PayloadAction<Provider>) => {
-      state.providers = state.providers.map((p) => (p.id === action.payload.id ? { ...p, ...action.payload } : p))
+    updateProvider: (state, action: PayloadAction<Partial<Provider> & { id: string }>) => {
+      const index = state.providers.findIndex((p) => p.id === action.payload.id)
+      if (index !== -1) {
+        Object.assign(state.providers[index], action.payload)
+      }
     },
     updateProviders: (state, action: PayloadAction<Provider[]>) => {
       state.providers = action.payload
@@ -599,6 +672,10 @@ const llmSlice = createSlice({
     setTranslateModel: (state, action: PayloadAction<{ model: Model }>) => {
       state.translateModel = action.payload.model
     },
+
+    setQuickAssistantId: (state, action: PayloadAction<string>) => {
+      state.quickAssistantId = action.payload
+    },
     setOllamaKeepAliveTime: (state, action: PayloadAction<number>) => {
       state.settings.ollama.keepAliveTime = action.payload
     },
@@ -607,6 +684,18 @@ const llmSlice = createSlice({
     },
     setGPUStackKeepAliveTime: (state, action: PayloadAction<number>) => {
       state.settings.gpustack.keepAliveTime = action.payload
+    },
+    setVertexAIProjectId: (state, action: PayloadAction<string>) => {
+      state.settings.vertexai.projectId = action.payload
+    },
+    setVertexAILocation: (state, action: PayloadAction<string>) => {
+      state.settings.vertexai.location = action.payload
+    },
+    setVertexAIServiceAccountPrivateKey: (state, action: PayloadAction<string>) => {
+      state.settings.vertexai.serviceAccount.privateKey = action.payload
+    },
+    setVertexAIServiceAccountClientEmail: (state, action: PayloadAction<string>) => {
+      state.settings.vertexai.serviceAccount.clientEmail = action.payload
     },
     updateModel: (
       state,
@@ -636,9 +725,14 @@ export const {
   setDefaultModel,
   setTopicNamingModel,
   setTranslateModel,
+  setQuickAssistantId,
   setOllamaKeepAliveTime,
   setLMStudioKeepAliveTime,
   setGPUStackKeepAliveTime,
+  setVertexAIProjectId,
+  setVertexAILocation,
+  setVertexAIServiceAccountPrivateKey,
+  setVertexAIServiceAccountClientEmail,
   updateModel
 } = llmSlice.actions
 

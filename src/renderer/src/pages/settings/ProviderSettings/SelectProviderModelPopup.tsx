@@ -48,12 +48,14 @@ const PopupContainer: React.FC<Props> = ({ provider, resolve, reject }) => {
       onCancel={onCancel}
       afterClose={onClose}
       transitionName="animation-move-down"
-      width={300}
+      width={400}
       centered>
       <Select
         value={model?.id}
+        placeholder={i18n.t('settings.models.empty')}
         options={models.map((m) => ({ label: m.name, value: m.id }))}
         style={{ width: '100%' }}
+        showSearch
         onChange={(value) => {
           setModel(provider.models.find((m) => m.id === value)!)
         }}

@@ -4,11 +4,16 @@ import {
   SendMessageShortcut,
   setAssistantIconType,
   setAutoCheckUpdate as _setAutoCheckUpdate,
+  setDisableHardwareAcceleration,
   setLaunchOnBoot,
   setLaunchToTray,
+  setPinTopicsToTop,
   setSendMessageShortcut as _setSendMessageShortcut,
+  setShowTokens,
   setSidebarIcons,
   setTargetLanguage,
+  setTestChannel as _setTestChannel,
+  setTestPlan as _setTestPlan,
   setTheme,
   SettingsState,
   setTopicPosition,
@@ -17,6 +22,7 @@ import {
   setWindowStyle
 } from '@renderer/store/settings'
 import { SidebarIcon, ThemeMode, TranslateLanguageVarious } from '@renderer/types'
+import { UpgradeChannel } from '@shared/config/constant'
 
 export function useSettings() {
   const settings = useAppSelector((state) => state.settings)
@@ -56,6 +62,16 @@ export function useSettings() {
       window.api.setAutoUpdate(isAutoUpdate)
     },
 
+    setTestPlan(isTestPlan: boolean) {
+      dispatch(_setTestPlan(isTestPlan))
+      window.api.setTestPlan(isTestPlan)
+    },
+
+    setTestChannel(channel: UpgradeChannel) {
+      dispatch(_setTestChannel(channel))
+      window.api.setTestChannel(channel)
+    },
+
     setTheme(theme: ThemeMode) {
       dispatch(setTheme(theme))
     },
@@ -68,6 +84,9 @@ export function useSettings() {
     setTopicPosition(topicPosition: 'left' | 'right') {
       dispatch(setTopicPosition(topicPosition))
     },
+    setPinTopicsToTop(pinTopicsToTop: boolean) {
+      dispatch(setPinTopicsToTop(pinTopicsToTop))
+    },
     updateSidebarIcons(icons: { visible: SidebarIcon[]; disabled: SidebarIcon[] }) {
       dispatch(setSidebarIcons(icons))
     },
@@ -79,6 +98,13 @@ export function useSettings() {
     },
     setAssistantIconType(assistantIconType: AssistantIconType) {
       dispatch(setAssistantIconType(assistantIconType))
+    },
+    setShowTokens(showTokens: boolean) {
+      dispatch(setShowTokens(showTokens))
+    },
+    setDisableHardwareAcceleration(disableHardwareAcceleration: boolean) {
+      dispatch(setDisableHardwareAcceleration(disableHardwareAcceleration))
+      window.api.setDisableHardwareAcceleration(disableHardwareAcceleration)
     }
   }
 }

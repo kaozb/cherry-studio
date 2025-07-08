@@ -1,4 +1,4 @@
-import { Assistant, FileType, FileTypes, Usage } from '@renderer/types'
+import { Assistant, FileMetadata, FileTypes, Usage } from '@renderer/types'
 import type { Message } from '@renderer/types/newMessage'
 import { findFileBlocks, getMainTextContent, getThinkingContent } from '@renderer/utils/messageUtils/find'
 import { flatten, takeRight } from 'lodash'
@@ -13,7 +13,7 @@ interface MessageItem {
   content: string
 }
 
-async function getFileContent(file: FileType) {
+async function getFileContent(file: FileMetadata) {
   if (!file) {
     return ''
   }
@@ -48,11 +48,26 @@ async function getMessageParam(message: Message): Promise<MessageItem[]> {
   return param
 }
 
+/**
+ * 估算文本内容的 token 数量
+ *
+ * @param text - 需要估算的文本内容
+ * @returns 返回估算的 token 数量
+ */
 export function estimateTextTokens(text: string) {
   return approximateTokenSize(text)
 }
 
-export function estimateImageTokens(file: FileType) {
+/**
+ * 估算图片文件的 token 数量
+ *
+ * 根据图片文件大小计算预估的 token 数量。
+ * 当前使用简单的文件大小除以 100 的方式进行估算。
+ *
+ * @param file - 图片文件对象
+ * @returns 返回估算的 token 数量
+ */
+export function estimateImageTokens(file: FileMetadata) {
   return Math.floor(file.size / 100)
 }
 
@@ -64,7 +79,7 @@ export function estimateImageTokens(file: FileType) {
  *
  * @param {Object} params - 输入参数对象
  * @param {string} [params.content] - 用户输入的文本内容
- * @param {FileType[]} [params.files] - 用户上传的文件列表（支持图片和文本）
+ * @param {FileMetadata[]} [params.files] - 用户上传的文件列表（支持图片和文本）
  * @returns {Promise<Usage>} 返回一个 Usage 对象，包含 prompt_tokens、completion_tokens、total_tokens
  */
 export async function estimateUserPromptUsage({
@@ -72,7 +87,7 @@ export async function estimateUserPromptUsage({
   files
 }: {
   content?: string
-  files?: FileType[]
+  files?: FileMetadata[]
 }): Promise<Usage> {
   let imageTokens = 0
 

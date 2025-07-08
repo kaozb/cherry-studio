@@ -1,7 +1,8 @@
-import { LoadingOutlined, MinusOutlined, PlusOutlined } from '@ant-design/icons'
+import { MinusOutlined, PlusOutlined } from '@ant-design/icons'
 import CustomCollapse from '@renderer/components/CustomCollapse'
 import CustomTag from '@renderer/components/CustomTag'
-import ModelTagsWithLabel from '@renderer/components/ModelTagsWithLabel'
+import ExpandableText from '@renderer/components/ExpandableText'
+import ModelIdWithTags from '@renderer/components/ModelIdWithTags'
 import {
   getModelLogo,
   groupQwenModels,
@@ -15,14 +16,17 @@ import {
 } from '@renderer/config/models'
 import { useProvider } from '@renderer/hooks/useProvider'
 import FileItem from '@renderer/pages/files/FileItem'
+import NewApiAddModelPopup from '@renderer/pages/settings/ProviderSettings/NewApiAddModelPopup'
+import NewApiBatchAddModelPopup from '@renderer/pages/settings/ProviderSettings/NewApiBatchAddModelPopup'
 import { fetchModels } from '@renderer/services/ApiService'
 import { Model, Provider } from '@renderer/types'
 import { getDefaultGroupName, isFreeModel, runAsyncFunction } from '@renderer/utils'
-import { Avatar, Button, Empty, Flex, Modal, Tabs, Tooltip, Typography } from 'antd'
+import { Avatar, Button, Empty, Flex, Modal, Spin, Tabs, Tooltip } from 'antd'
 import Input from 'antd/es/input/Input'
 import { groupBy, isEmpty, uniqBy } from 'lodash'
+import { debounce } from 'lodash'
 import { Search } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useOptimistic, useRef, useState, useTransition } from 'react'
 import { useTranslation } from 'react-i18next'
 import styled from 'styled-components'
 
@@ -41,13 +45,38 @@ const isModelInProvider = (provider: Provider, modelId: string): boolean => {
   return provider.models.some((m) => m.id === modelId)
 }
 
+const isValidNewApiModel = (model: Model): boolean => {
+  return !!(model.supported_endpoint_types && model.supported_endpoint_types.length > 0)
+}
+
 const PopupContainer: React.FC<Props> = ({ provider: _provider, resolve }) => {
   const [open, setOpen] = useState(true)
   const { provider, models, addModel, removeModel } = useProvider(_provider.id)
   const [listModels, setListModels] = useState<Model[]>([])
   const [loading, setLoading] = useState(false)
   const [searchText, setSearchText] = useState('')
-  const [filterType, setFilterType] = useState<string>('all')
+  const [filterSearchText, setFilterSearchText] = useState('')
+  const debouncedSetFilterText = useMemo(
+    () =>
+      debounce((value: string) => {
+        startSearchTransition(() => {
+          setFilterSearchText(value)
+        })
+      }, 300),
+    []
+  )
+  useEffect(() => {
+    return () => {
+      debouncedSetFilterText.cancel()
+    }
+  }, [debouncedSetFilterText])
+  const [actualFilterType, setActualFilterType] = useState<string>('all')
+  const [optimisticFilterType, setOptimisticFilterTypeFn] = useOptimistic(
+    actualFilterType,
+    (_currentFilterType, newFilterType: string) => newFilterType
+  )
+  const [isSearchPending, startSearchTransition] = useTransition()
+  const [isFilterTypePending, startFilterTypeTransition] = useTransition()
   const { t, i18n } = useTranslation()
   const searchInputRef = useRef<any>(null)
 
@@ -56,14 +85,14 @@ const PopupContainer: React.FC<Props> = ({ provider: _provider, resolve }) => {
 
   const list = allModels.filter((model) => {
     if (
-      searchText &&
-      !model.id.toLocaleLowerCase().includes(searchText.toLocaleLowerCase()) &&
-      !model.name?.toLocaleLowerCase().includes(searchText.toLocaleLowerCase())
+      filterSearchText &&
+      !model.id.toLocaleLowerCase().includes(filterSearchText.toLocaleLowerCase()) &&
+      !model.name?.toLocaleLowerCase().includes(filterSearchText.toLocaleLowerCase())
     ) {
       return false
     }
 
-    switch (filterType) {
+    switch (actualFilterType) {
       case 'reasoning':
         return isReasoningModel(model)
       case 'vision':
@@ -106,10 +135,21 @@ const PopupContainer: React.FC<Props> = ({ provider: _provider, resolve }) => {
   const onAddModel = useCallback(
     (model: Model) => {
       if (!isEmpty(model.name)) {
-        addModel(model)
+        if (provider.id === 'new-api') {
+          if (model.supported_endpoint_types && model.supported_endpoint_types.length > 0) {
+            addModel({
+              ...model,
+              endpoint_type: model.supported_endpoint_types[0]
+            })
+          } else {
+            NewApiAddModelPopup.show({ title: t('settings.models.add.add_model'), provider, model })
+          }
+        } else {
+          addModel(model)
+        }
       }
     },
-    [addModel]
+    [addModel, provider, t]
   )
 
   const onRemoveModel = useCallback((model: Model) => removeModel(model), [removeModel])
@@ -122,20 +162,26 @@ const PopupContainer: React.FC<Props> = ({ provider: _provider, resolve }) => {
         setListModels(
           models
             .map((model) => ({
-              id: model.id,
+              // @ts-ignore modelId
+              id: model?.id || model?.name,
               // @ts-ignore name
-              name: model.name || model.id,
+              name: model?.display_name || model?.displayName || model?.name || model?.id,
               provider: _provider.id,
-              group: getDefaultGroupName(model.id, _provider.id),
-              // @ts-ignore name
-              description: model?.description,
-              owned_by: model?.owned_by
+              // @ts-ignore group
+              group: getDefaultGroupName(model?.id || model?.name, _provider.id),
+              // @ts-ignore description
+              description: model?.description || '',
+              // @ts-ignore owned_by
+              owned_by: model?.owned_by || '',
+              // @ts-ignore supported_endpoint_types
+              supported_endpoint_types: model?.supported_endpoint_types
             }))
             .filter((model) => !isEmpty(model.name))
         )
-        setLoading(false)
       } catch (error) {
-        setLoading(false)
+        console.error('Failed to fetch models', error)
+      } finally {
+        setTimeout(() => setLoading(false), 300)
       }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -145,7 +191,7 @@ const PopupContainer: React.FC<Props> = ({ provider: _provider, resolve }) => {
     if (open && searchInputRef.current) {
       setTimeout(() => {
         searchInputRef.current?.focus()
-      }, 100)
+      }, 350)
     }
   }, [open])
 
@@ -157,7 +203,6 @@ const PopupContainer: React.FC<Props> = ({ provider: _provider, resolve }) => {
           {i18n.language.startsWith('zh') ? '' : ' '}
           {t('common.models')}
         </ModelHeaderTitle>
-        {loading && <LoadingOutlined size={20} />}
       </Flex>
     )
   }
@@ -170,6 +215,7 @@ const PopupContainer: React.FC<Props> = ({ provider: _provider, resolve }) => {
         title={
           isAllFilteredInProvider ? t('settings.models.manage.remove_listed') : t('settings.models.manage.add_listed')
         }
+        mouseEnterDelay={0.5}
         placement="top">
         <Button
           type={isAllFilteredInProvider ? 'default' : 'primary'}
@@ -180,14 +226,27 @@ const PopupContainer: React.FC<Props> = ({ provider: _provider, resolve }) => {
             if (isAllFilteredInProvider) {
               list.filter((model) => isModelInProvider(provider, model.id)).forEach(onRemoveModel)
             } else {
-              list.filter((model) => !isModelInProvider(provider, model.id)).forEach(onAddModel)
+              const wouldAddModel = list.filter((model) => !isModelInProvider(provider, model.id))
+              if (provider.id === 'new-api') {
+                if (models.every(isValidNewApiModel)) {
+                  wouldAddModel.forEach(onAddModel)
+                } else {
+                  NewApiBatchAddModelPopup.show({
+                    title: t('settings.models.add.batch_add_models'),
+                    batchModels: wouldAddModel,
+                    provider
+                  })
+                }
+              } else {
+                wouldAddModel.forEach(onAddModel)
+              }
             }
           }}
           disabled={list.length === 0}
         />
       </Tooltip>
     )
-  }, [list, provider, onAddModel, onRemoveModel, t])
+  }, [list, t, provider, onRemoveModel, models, onAddModel])
 
   const renderGroupTools = useCallback(
     (group: string) => {
@@ -200,6 +259,7 @@ const PopupContainer: React.FC<Props> = ({ provider: _provider, resolve }) => {
               ? t(`settings.models.manage.remove_whole_group`)
               : t(`settings.models.manage.add_whole_group`)
           }
+          mouseEnterDelay={0.5}
           placement="top">
           <Button
             type="text"
@@ -209,7 +269,20 @@ const PopupContainer: React.FC<Props> = ({ provider: _provider, resolve }) => {
               if (isAllInProvider) {
                 modelGroups[group].filter((model) => isModelInProvider(provider, model.id)).forEach(onRemoveModel)
               } else {
-                modelGroups[group].filter((model) => !isModelInProvider(provider, model.id)).forEach(onAddModel)
+                const wouldAddModel = modelGroups[group].filter((model) => !isModelInProvider(provider, model.id))
+                if (provider.id === 'new-api') {
+                  if (wouldAddModel.every(isValidNewApiModel)) {
+                    wouldAddModel.forEach(onAddModel)
+                  } else {
+                    NewApiBatchAddModelPopup.show({
+                      title: t('settings.models.add.batch_add_models'),
+                      batchModels: wouldAddModel,
+                      provider
+                    })
+                  }
+                } else {
+                  wouldAddModel.forEach(onAddModel)
+                }
               }
             }}
           />
@@ -228,10 +301,6 @@ const PopupContainer: React.FC<Props> = ({ provider: _provider, resolve }) => {
       afterClose={onClose}
       footer={null}
       width="800px"
-      styles={{
-        content: { padding: 0 },
-        header: { padding: '16px 22px 30px 22px' }
-      }}
       transitionName="animation-move-down"
       centered>
       <SearchContainer>
@@ -242,13 +311,19 @@ const PopupContainer: React.FC<Props> = ({ provider: _provider, resolve }) => {
             ref={searchInputRef}
             placeholder={t('settings.provider.search_placeholder')}
             allowClear
-            onChange={(e) => setSearchText(e.target.value)}
+            value={searchText}
+            onChange={(e) => {
+              const newSearchValue = e.target.value
+              setSearchText(newSearchValue) // Update input field immediately
+              debouncedSetFilterText(newSearchValue)
+            }}
           />
           {renderTopTools()}
         </TopToolsWrapper>
         <Tabs
           size={i18n.language.startsWith('zh') ? 'middle' : 'small'}
           defaultActiveKey="all"
+          activeKey={optimisticFilterType}
           items={[
             { label: t('models.all'), key: 'all' },
             { label: t('models.type.reasoning'), key: 'reasoning' },
@@ -259,98 +334,94 @@ const PopupContainer: React.FC<Props> = ({ provider: _provider, resolve }) => {
             { label: t('models.type.rerank'), key: 'rerank' },
             { label: t('models.type.function_calling'), key: 'function_calling' }
           ]}
-          onChange={(key) => setFilterType(key)}
+          onChange={(key) => {
+            setOptimisticFilterTypeFn(key)
+            startFilterTypeTransition(() => {
+              setActualFilterType(key)
+            })
+          }}
         />
       </SearchContainer>
       <ListContainer>
-        {Object.keys(modelGroups).map((group, i) => {
-          return (
-            <CustomCollapse
-              key={i}
-              defaultActiveKey={['1']}
-              styles={{ body: { padding: '0 10px' } }}
-              label={
-                <Flex align="center" gap={10}>
-                  <span style={{ fontWeight: 600 }}>{group}</span>
-                  <CustomTag color="#02B96B" size={10}>
-                    {modelGroups[group].length}
-                  </CustomTag>
-                </Flex>
-              }
-              extra={renderGroupTools(group)}>
-              <FlexColumn style={{ margin: '10px 0' }}>
-                {modelGroups[group].map((model) => (
-                  <FileItem
-                    style={{
-                      backgroundColor: isModelInProvider(provider, model.id)
-                        ? 'rgba(0, 126, 0, 0.06)'
-                        : 'rgba(255, 255, 255, 0.04)',
-                      border: 'none',
-                      boxShadow: 'none'
-                    }}
-                    key={model.id}
-                    fileInfo={{
-                      icon: <Avatar src={getModelLogo(model.id)}>{model?.name?.[0]?.toUpperCase()}</Avatar>,
-                      name: (
-                        <ListItemName>
-                          <Tooltip
-                            styles={{
-                              root: {
-                                width: 'auto',
-                                maxWidth: '500px'
-                              }
-                            }}
-                            destroyTooltipOnHide
-                            title={
-                              <Typography.Text style={{ color: 'white' }} copyable={{ text: model.id }}>
-                                {model.id}
-                              </Typography.Text>
-                            }
-                            placement="top">
-                            <span style={{ cursor: 'help' }}>{model.name}</span>
-                          </Tooltip>
-                          <ModelTagsWithLabel model={model} size={11} />
-                        </ListItemName>
-                      ),
-                      extra: model.description && (
-                        <div style={{ marginTop: 6 }}>
-                          <Typography.Paragraph
-                            type="secondary"
-                            ellipsis={{ rows: 1, expandable: true }}
-                            style={{ marginBottom: 0, marginTop: 5 }}>
-                            {model.description}
-                          </Typography.Paragraph>
-                        </div>
-                      ),
-                      ext: '.model',
-                      actions: (
-                        <div>
-                          {isModelInProvider(provider, model.id) ? (
-                            <Button type="text" onClick={() => onRemoveModel(model)} icon={<MinusOutlined />} />
-                          ) : (
-                            <Button type="text" onClick={() => onAddModel(model)} icon={<PlusOutlined />} />
-                          )}
-                        </div>
-                      )
-                    }}
-                  />
-                ))}
-              </FlexColumn>
-            </CustomCollapse>
-          )
-        })}
-        {isEmpty(list) && <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('settings.models.empty')} />}
+        {loading || isFilterTypePending || isSearchPending ? (
+          <Flex justify="center" align="center" style={{ height: '70%' }}>
+            <Spin size="large" />
+          </Flex>
+        ) : (
+          Object.keys(modelGroups).map((group, i) => {
+            return (
+              <CustomCollapse
+                key={i}
+                defaultActiveKey={['1']}
+                styles={{ body: { padding: '0 10px' } }}
+                label={
+                  <Flex align="center" gap={10}>
+                    <span style={{ fontWeight: 600 }}>{group}</span>
+                    <CustomTag color="#02B96B" size={10}>
+                      {modelGroups[group].length}
+                    </CustomTag>
+                  </Flex>
+                }
+                extra={renderGroupTools(group)}>
+                <FlexColumn style={{ margin: '10px 0' }}>
+                  {modelGroups[group].map((model) => (
+                    <ModelListItem
+                      key={model.id}
+                      model={model}
+                      provider={provider}
+                      onAddModel={onAddModel}
+                      onRemoveModel={onRemoveModel}
+                    />
+                  ))}
+                </FlexColumn>
+              </CustomCollapse>
+            )
+          })
+        )}
+        {!(loading || isFilterTypePending || isSearchPending) && isEmpty(list) && (
+          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('settings.models.empty')} />
+        )}
       </ListContainer>
     </Modal>
   )
 }
 
+interface ModelListItemProps {
+  model: Model
+  provider: Provider
+  onAddModel: (model: Model) => void
+  onRemoveModel: (model: Model) => void
+}
+
+const ModelListItem: React.FC<ModelListItemProps> = memo(({ model, provider, onAddModel, onRemoveModel }) => {
+  const isAdded = useMemo(() => isModelInProvider(provider, model.id), [provider, model.id])
+
+  return (
+    <FileItem
+      style={{
+        backgroundColor: isAdded ? 'rgba(0, 126, 0, 0.06)' : 'rgba(255, 255, 255, 0.04)',
+        border: 'none',
+        boxShadow: 'none'
+      }}
+      fileInfo={{
+        icon: <Avatar src={getModelLogo(model.id)}>{model?.name?.[0]?.toUpperCase()}</Avatar>,
+        name: <ModelIdWithTags model={model} />,
+        extra: model.description && <ExpandableText text={model.description} />,
+        ext: '.model',
+        actions: isAdded ? (
+          <Button type="text" onClick={() => onRemoveModel(model)} icon={<MinusOutlined />} />
+        ) : (
+          <Button type="text" onClick={() => onAddModel(model)} icon={<PlusOutlined />} />
+        )
+      }}
+    />
+  )
+})
+
 const SearchContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 15px;
-  padding: 0 22px;
-  margin-top: -10px;
 
   .ant-radio-group {
     display: flex;
@@ -367,12 +438,10 @@ const TopToolsWrapper = styled.div`
 const ListContainer = styled.div`
   height: calc(100vh - 300px);
   overflow-y: scroll;
-  padding: 0 6px 16px 6px;
-  margin-left: 16px;
-  margin-right: 10px;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  padding-right: 2px;
 `
 
 const FlexColumn = styled.div`
@@ -380,17 +449,6 @@ const FlexColumn = styled.div`
   flex-direction: column;
   gap: 12px;
   margin-top: 16px;
-`
-
-const ListItemName = styled.div`
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-  color: var(--color-text);
-  font-size: 14px;
-  line-height: 1;
-  font-weight: 600;
 `
 
 const ModelHeaderTitle = styled.div`

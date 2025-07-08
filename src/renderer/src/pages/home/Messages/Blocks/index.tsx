@@ -42,6 +42,7 @@ const blockWrapperVariants = {
 const AnimatedBlockWrapper: React.FC<AnimatedBlockWrapperProps> = ({ children, enableAnimation }) => {
   return (
     <motion.div
+      className="block-wrapper"
       variants={blockWrapperVariants}
       initial={enableAnimation ? 'hidden' : 'static'}
       animate={enableAnimation ? 'visible' : 'static'}>
@@ -85,7 +86,7 @@ const MessageBlockRenderer: React.FC<Props> = ({ blocks, message }) => {
           const groupKey = block.map((imageBlock) => imageBlock.id).join('-')
           return (
             <AnimatedBlockWrapper key={groupKey} enableAnimation={message.status.includes('ing')}>
-              <ImageBlockGroup>
+              <ImageBlockGroup count={block.length}>
                 {block.map((imageBlock) => (
                   <ImageBlock key={imageBlock.id} block={imageBlock as ImageMessageBlock} />
                 ))}
@@ -161,16 +162,9 @@ const MessageBlockRenderer: React.FC<Props> = ({ blocks, message }) => {
 
 export default React.memo(MessageBlockRenderer)
 
-const ImageBlockGroup = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  align-items: center;
+const ImageBlockGroup = styled.div<{ count: number }>`
+  display: grid;
+  grid-template-columns: repeat(${({ count }) => Math.min(count, 3)}, minmax(200px, 1fr));
   gap: 8px;
-  width: 100%;
-  margin: 8px 0;
-  > * {
-    flex: 0 0 auto;
-    min-width: 200px;
-  }
+  max-width: 960px;
 `

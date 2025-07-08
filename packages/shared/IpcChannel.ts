@@ -1,7 +1,10 @@
 export enum IpcChannel {
+  App_GetCacheSize = 'app:get-cache-size',
   App_ClearCache = 'app:clear-cache',
   App_SetLaunchOnBoot = 'app:set-launch-on-boot',
   App_SetLanguage = 'app:set-language',
+  App_SetEnableSpellCheck = 'app:set-enable-spell-check',
+  App_SetSpellCheckLanguages = 'app:set-spell-check-languages',
   App_ShowUpdateDialog = 'app:show-update-dialog',
   App_CheckForUpdate = 'app:check-for-update',
   App_Reload = 'app:reload',
@@ -10,17 +13,36 @@ export enum IpcChannel {
   App_SetLaunchToTray = 'app:set-launch-to-tray',
   App_SetTray = 'app:set-tray',
   App_SetTrayOnClose = 'app:set-tray-on-close',
-  App_RestartTray = 'app:restart-tray',
   App_SetTheme = 'app:set-theme',
   App_SetAutoUpdate = 'app:set-auto-update',
+  App_SetTestPlan = 'app:set-test-plan',
+  App_SetTestChannel = 'app:set-test-channel',
   App_HandleZoomFactor = 'app:handle-zoom-factor',
-
+  App_Select = 'app:select',
+  App_HasWritePermission = 'app:has-write-permission',
+  App_Copy = 'app:copy',
+  App_SetStopQuitApp = 'app:set-stop-quit-app',
+  App_SetAppDataPath = 'app:set-app-data-path',
+  App_GetDataPathFromArgs = 'app:get-data-path-from-args',
+  App_FlushAppData = 'app:flush-app-data',
+  App_IsNotEmptyDir = 'app:is-not-empty-dir',
+  App_RelaunchApp = 'app:relaunch-app',
   App_IsBinaryExist = 'app:is-binary-exist',
   App_GetBinaryPath = 'app:get-binary-path',
   App_InstallUvBinary = 'app:install-uv-binary',
   App_InstallBunBinary = 'app:install-bun-binary',
 
+  App_MacIsProcessTrusted = 'app:mac-is-process-trusted',
+  App_MacRequestProcessTrust = 'app:mac-request-process-trust',
+
+  App_QuoteToMain = 'app:quote-to-main',
+  App_SetDisableHardwareAcceleration = 'app:set-disable-hardware-acceleration',
+
+  Notification_Send = 'notification:send',
+  Notification_OnClick = 'notification:on-click',
+
   Webview_SetOpenLinkExternal = 'webview:set-open-link-external',
+  Webview_SetSpellCheckEnabled = 'webview:set-spell-check-enabled',
 
   // Open
   Open_Path = 'open:path',
@@ -51,6 +73,10 @@ export enum IpcChannel {
   Mcp_GetInstallInfo = 'mcp:get-install-info',
   Mcp_ServersChanged = 'mcp:servers-changed',
   Mcp_ServersUpdated = 'mcp:servers-updated',
+  Mcp_CheckConnectivity = 'mcp:check-connectivity',
+
+  // Python
+  Python_Execute = 'python:execute',
 
   //copilot
   Copilot_GetAuthMessage = 'copilot:get-auth-message',
@@ -79,6 +105,10 @@ export enum IpcChannel {
   Gemini_ListFiles = 'gemini:list-files',
   Gemini_DeleteFile = 'gemini:delete-file',
 
+  // VertexAI
+  VertexAI_GetAuthHeaders = 'vertexai:get-auth-headers',
+  VertexAI_ClearAuthCache = 'vertexai:clear-auth-cache',
+
   Windows_ResetMinimumSize = 'window:reset-minimum-size',
   Windows_SetMinimumSize = 'window:set-minimum-size',
 
@@ -89,6 +119,7 @@ export enum IpcChannel {
   KnowledgeBase_Remove = 'knowledge-base:remove',
   KnowledgeBase_Search = 'knowledge-base:search',
   KnowledgeBase_Rerank = 'knowledge-base:rerank',
+  KnowledgeBase_Check_Quota = 'knowledge-base:check-quota',
 
   //file
   File_Open = 'file:open',
@@ -99,18 +130,27 @@ export enum IpcChannel {
   File_Clear = 'file:clear',
   File_Read = 'file:read',
   File_Delete = 'file:delete',
+  File_DeleteDir = 'file:deleteDir',
   File_Get = 'file:get',
   File_SelectFolder = 'file:selectFolder',
-  File_Create = 'file:create',
+  File_CreateTempFile = 'file:createTempFile',
   File_Write = 'file:write',
   File_WriteWithId = 'file:writeWithId',
   File_SaveImage = 'file:saveImage',
   File_Base64Image = 'file:base64Image',
+  File_SaveBase64Image = 'file:saveBase64Image',
   File_Download = 'file:download',
   File_Copy = 'file:copy',
   File_BinaryImage = 'file:binaryImage',
   File_Base64File = 'file:base64File',
+  File_GetPdfInfo = 'file:getPdfInfo',
   Fs_Read = 'fs:read',
+
+  // file service
+  FileService_Upload = 'file-service:upload',
+  FileService_List = 'file-service:list',
+  FileService_Delete = 'file-service:delete',
+  FileService_Retrieve = 'file-service:retrieve',
 
   Export_Word = 'export:word',
 
@@ -125,6 +165,16 @@ export enum IpcChannel {
   Backup_CheckConnection = 'backup:checkConnection',
   Backup_CreateDirectory = 'backup:createDirectory',
   Backup_DeleteWebdavFile = 'backup:deleteWebdavFile',
+  Backup_BackupToLocalDir = 'backup:backupToLocalDir',
+  Backup_RestoreFromLocalBackup = 'backup:restoreFromLocalBackup',
+  Backup_ListLocalBackupFiles = 'backup:listLocalBackupFiles',
+  Backup_DeleteLocalBackupFile = 'backup:deleteLocalBackupFile',
+  Backup_SetLocalBackupDir = 'backup:setLocalBackupDir',
+  Backup_BackupToS3 = 'backup:backupToS3',
+  Backup_RestoreFromS3 = 'backup:restoreFromS3',
+  Backup_ListS3Files = 'backup:listS3Files',
+  Backup_DeleteS3File = 'backup:deleteS3File',
+  Backup_CheckS3Connection = 'backup:checkS3Connection',
 
   // zip
   Zip_Compress = 'zip:compress',
@@ -134,9 +184,12 @@ export enum IpcChannel {
   System_GetDeviceType = 'system:getDeviceType',
   System_GetHostname = 'system:getHostname',
 
+  // DevTools
+  System_ToggleDevTools = 'system:toggleDevTools',
+
   // events
   BackupProgress = 'backup-progress',
-  ThemeChange = 'theme:change',
+  ThemeUpdated = 'theme:updated',
   UpdateDownloadedCancelled = 'update-downloaded-cancelled',
   RestoreProgress = 'restore-progress',
   UpdateError = 'update-error',
@@ -165,5 +218,26 @@ export enum IpcChannel {
   StoreSync_Subscribe = 'store-sync:subscribe',
   StoreSync_Unsubscribe = 'store-sync:unsubscribe',
   StoreSync_OnUpdate = 'store-sync:on-update',
-  StoreSync_BroadcastSync = 'store-sync:broadcast-sync'
+  StoreSync_BroadcastSync = 'store-sync:broadcast-sync',
+
+  // Provider
+  Provider_AddKey = 'provider:add-key',
+
+  //Selection Assistant
+  Selection_TextSelected = 'selection:text-selected',
+  Selection_ToolbarHide = 'selection:toolbar-hide',
+  Selection_ToolbarVisibilityChange = 'selection:toolbar-visibility-change',
+  Selection_ToolbarDetermineSize = 'selection:toolbar-determine-size',
+  Selection_WriteToClipboard = 'selection:write-to-clipboard',
+  Selection_SetEnabled = 'selection:set-enabled',
+  Selection_SetTriggerMode = 'selection:set-trigger-mode',
+  Selection_SetFilterMode = 'selection:set-filter-mode',
+  Selection_SetFilterList = 'selection:set-filter-list',
+  Selection_SetFollowToolbar = 'selection:set-follow-toolbar',
+  Selection_SetRemeberWinSize = 'selection:set-remeber-win-size',
+  Selection_ActionWindowClose = 'selection:action-window-close',
+  Selection_ActionWindowMinimize = 'selection:action-window-minimize',
+  Selection_ActionWindowPin = 'selection:action-window-pin',
+  Selection_ProcessAction = 'selection:process-action',
+  Selection_UpdateActionData = 'selection:update-action-data'
 }

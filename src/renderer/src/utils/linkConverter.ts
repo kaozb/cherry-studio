@@ -1,3 +1,5 @@
+import { WebSearchResponse, WebSearchSource } from '@renderer/types'
+
 // Counter for numbering links
 let linkCounter = 1
 // Buffer to hold incomplete link fragments across chunks
@@ -7,8 +9,8 @@ let urlToCounterMap: Map<string, number> = new Map()
 
 /**
  * Determines if a string looks like a host/URL
- * @param text The text to check
- * @returns Boolean indicating if the text is likely a host
+ * @param {string} text The text to check
+ * @returns {boolean} Boolean indicating if the text is likely a host
  */
 function isHost(text: string): boolean {
   // Basic check for URL-like patterns
@@ -18,11 +20,11 @@ function isHost(text: string): boolean {
 /**
  * Converts Markdown links in the text to numbered links based on the rules:s
  * [ref_N] -> [<sup>N</sup>]
- * @param text The current chunk of text to process
- * @param resetCounter Whether to reset the counter and buffer
- * @returns Processed text with complete links converted
+ * @param {string} text The current chunk of text to process
+ * @param {boolean} resetCounter Whether to reset the counter and buffer
+ * @returns {string} Processed text with complete links converted
  */
-export function convertLinksToZhipu(text: string, resetCounter = false): string {
+export function convertLinksToZhipu(text: string, resetCounter: boolean = false): string {
   if (resetCounter) {
     linkCounter = 1
     buffer = ''
@@ -57,7 +59,16 @@ export function convertLinksToZhipu(text: string, resetCounter = false): string 
   })
 }
 
-export function convertLinksToHunyuan(text: string, webSearch: any[], resetCounter = false): string {
+/**
+ * Converts Markdown links in the text to numbered links based on the rules:
+ * [N](@ref) -> [<sup>N</sup>]()
+ * [N,M,...](@ref) -> [<sup>N</sup>]() [<sup>M</sup>]() ...
+ * @param {string} text The current chunk of text to process
+ * @param {any[]} webSearch webSearch results
+ * @param {boolean} resetCounter Whether to reset the counter and buffer
+ * @returns {string} Processed text with complete links converted
+ */
+export function convertLinksToHunyuan(text: string, webSearch: any[], resetCounter: boolean = false): string {
   if (resetCounter) {
     linkCounter = 1
     buffer = ''
@@ -115,11 +126,14 @@ export function convertLinksToHunyuan(text: string, webSearch: any[], resetCount
  * 2. [host](url) -> [cnt](url)
  * 3. [any text except url](url)-> any text [cnt](url)
  *
- * @param text The current chunk of text to process
- * @param resetCounter Whether to reset the counter and buffer
- * @returns Processed text with complete links converted
+ * @param {string} text The current chunk of text to process
+ * @param {boolean} resetCounter Whether to reset the counter and buffer
+ * @returns {{text: string, hasBufferedContent: boolean}} Processed text and whether content was buffered
  */
-export function convertLinks(text: string, resetCounter = false): string {
+export function convertLinks(
+  text: string,
+  resetCounter: boolean = false
+): { text: string; hasBufferedContent: boolean } {
   if (resetCounter) {
     linkCounter = 1
     buffer = ''
@@ -149,18 +163,31 @@ export function convertLinks(text: string, resetCounter = false): string {
     } else if (buffer[i] === '[') {
       // Check if this could be the start of a regular link
       const substring = buffer.substring(i)
-      const match = /^\[([^\]]+)\]\(([^)]+)\)/.exec(substring)
 
-      if (!match) {
+      // 检查是否是真正的不完整链接：[text]( 但没有完整的 url)
+      const incompleteLink = /^\[([^\]]+)\]\s*\([^)]*$/.test(substring)
+      if (incompleteLink) {
         safePoint = i
         break
       }
+
+      // 检查是否是完整的链接但需要验证
+      const completeLink = /^\[([^\]]+)\]\(([^)]+)\)/.test(substring)
+      if (completeLink) {
+        // 如果是完整链接，继续处理，不设置safePoint
+        continue
+      }
+
+      // 如果不是潜在的链接格式，继续检查
     }
   }
 
   // Extract the part of the buffer that we can safely process
   const safeBuffer = buffer.substring(0, safePoint)
   buffer = buffer.substring(safePoint)
+
+  // 检查是否有内容被保留在buffer中
+  const hasBufferedContent = buffer.length > 0
 
   // Process the safe buffer to handle complete links
   let result = ''
@@ -211,11 +238,13 @@ export function convertLinks(text: string, resetCounter = false): string {
         }
 
         // Rule 3: If the link text is not a URL/host, keep the text and add the numbered link
-        if (!isHost(linkText)) {
-          result += `${linkText} [<sup>${counter}</sup>](${url})`
-        } else {
-          // Rule 2: If the link text is a URL/host, replace with numbered link
+        // 增加一个条件：如果 linkText 是纯数字，也直接替换
+        if (isHost(linkText) || /^\d+$/.test(linkText)) {
+          // Rule 2: If the link text is a URL/host or purely digits, replace with numbered link
           result += `[<sup>${counter}</sup>](${url})`
+        } else {
+          // If the link text is neither a URL/host nor purely digits, keep the text and add the numbered link
+          result += `${linkText} [<sup>${counter}</sup>](${url})`
         }
 
         position += match[0].length
@@ -228,16 +257,19 @@ export function convertLinks(text: string, resetCounter = false): string {
     position++
   }
 
-  return result
+  return {
+    text: result,
+    hasBufferedContent
+  }
 }
 
 /**
  * Converts Markdown links in the text to numbered links based on the rules:
  * 1. [host](url) -> [cnt](url)
  *
- * @param text The current chunk of text to process
- * @param resetCounter Whether to reset the counter and buffer
- * @returns Processed text with complete links converted
+ * @param {string} text The current chunk of text to process
+ * @param {boolean} resetCounter Whether to reset the counter and buffer
+ * @returns {string} Processed text with complete links converted
  */
 export function convertLinksToOpenRouter(text: string, resetCounter = false): string {
   if (resetCounter) {
@@ -292,9 +324,9 @@ export function convertLinksToOpenRouter(text: string, resetCounter = false): st
 
 /**
  * 根据webSearch结果补全链接，将[<sup>num</sup>]()转换为[<sup>num</sup>](webSearch[num-1].url)
- * @param text 原始文本
- * @param webSearch webSearch结果
- * @returns 补全后的文本
+ * @param {string} text 原始文本
+ * @param {any[]} webSearch webSearch结果
+ * @returns {string} 补全后的文本
  */
 export function completeLinks(text: string, webSearch: any[]): string {
   // 使用正则表达式匹配形如 [<sup>num</sup>]() 的链接
@@ -310,14 +342,33 @@ export function completeLinks(text: string, webSearch: any[]): string {
 }
 
 /**
+ * 根据webSearch结果补全链接，将[num]转换为[num](webSearch[num-1].url)
+ * @param {string} text 原始文本
+ * @param {any[]} webSearch webSearch结果
+ * @returns {string} 补全后的文本
+ */
+export function completionPerplexityLinks(text: string, webSearch: any[]): string {
+  return text.replace(/\[(\d+)\]/g, (match, numStr) => {
+    const num = parseInt(numStr)
+    const index = num - 1
+    // 检查 webSearch 数组中是否存在对应的 URL
+    if (index >= 0 && index < webSearch.length && webSearch[index].url) {
+      return `[${num}](${webSearch[index].url})`
+    }
+    // 如果没有找到对应的 URL，保持原样
+    return match
+  })
+}
+
+/**
  * 从Markdown文本中提取所有URL
  * 支持以下格式：
  * 1. [text](url)
  * 2. [<sup>num</sup>](url)
  * 3. ([text](url))
  *
- * @param text Markdown格式的文本
- * @returns 提取到的URL数组，去重后的结果
+ * @param {string} text Markdown格式的文本
+ * @returns {string[]} 提取到的URL数组，去重后的结果
  */
 export function extractUrlsFromMarkdown(text: string): string[] {
   const urlSet = new Set<string>()
@@ -338,8 +389,8 @@ export function extractUrlsFromMarkdown(text: string): string[] {
 
 /**
  * 验证字符串是否是有效的URL
- * @param url 要验证的URL字符串
- * @returns 是否是有效的URL
+ * @param {string} url 要验证的URL字符串
+ * @returns {boolean} 是否是有效的URL
  */
 function isValidUrl(url: string): boolean {
   try {
@@ -353,10 +404,132 @@ function isValidUrl(url: string): boolean {
 /**
  * 清理 Markdown 链接之间的逗号
  * 例如: [text](url),[text](url) -> [text](url) [text](url)
- * @param text 包含 Markdown 链接的文本
- * @returns 清理后的文本
+ * @param {string} text 包含 Markdown 链接的文本
+ * @returns {string} 清理后的文本
  */
 export function cleanLinkCommas(text: string): string {
   // 匹配两个 Markdown 链接之间的英文逗号（可能包含空格）
   return text.replace(/\]\(([^)]+)\)\s*,\s*\[/g, ']($1)[')
+}
+
+/**
+ * 从文本中识别各种格式的Web搜索引用占位符
+ * 支持的格式包括：[1], [ref_1], [1](@ref), [1,2,3](@ref) 等
+ * @param {string} text 要分析的文本
+ * @returns {Array} 识别到的引用信息数组
+ */
+export function extractWebSearchReferences(text: string): Array<{
+  match: string
+  placeholder: string
+  numbers: number[]
+  startIndex: number
+  endIndex: number
+}> {
+  const references: Array<{
+    match: string
+    placeholder: string
+    numbers: number[]
+    startIndex: number
+    endIndex: number
+  }> = []
+
+  // 匹配各种引用格式的正则表达式
+  const patterns = [
+    // [1], [2], [3] - 简单数字引用
+    { regex: /\[(\d+)\]/g, type: 'simple' },
+    // [ref_1], [ref_2] - Zhipu格式
+    { regex: /\[ref_(\d+)\]/g, type: 'zhipu' },
+    // [1](@ref), [2](@ref) - Hunyuan单个引用格式
+    { regex: /\[(\d+)\]\(@ref\)/g, type: 'hunyuan_single' },
+    // [1,2,3](@ref) - Hunyuan多个引用格式
+    { regex: /\[([\d,\s]+)\]\(@ref\)/g, type: 'hunyuan_multiple' }
+  ]
+
+  patterns.forEach(({ regex, type }) => {
+    let match
+    while ((match = regex.exec(text)) !== null) {
+      let numbers: number[] = []
+
+      if (type === 'hunyuan_multiple') {
+        // 解析逗号分隔的数字
+        numbers = match[1]
+          .split(',')
+          .map((num) => parseInt(num.trim()))
+          .filter((num) => !isNaN(num))
+      } else {
+        // 单个数字
+        numbers = [parseInt(match[1])]
+      }
+
+      references.push({
+        match: match[0],
+        placeholder: match[0],
+        numbers: numbers,
+        startIndex: match.index!,
+        endIndex: match.index! + match[0].length
+      })
+    }
+  })
+
+  // 按位置排序
+  return references.sort((a, b) => a.startIndex - b.startIndex)
+}
+
+/**
+ * 智能链接转换器 - 根据文本中的引用模式和Web搜索结果自动选择合适的转换策略
+ * @param {string} text 当前文本块
+ * @param {any[]} webSearchResults Web搜索结果数组
+ * @param {string} providerType Provider类型 ('openai', 'zhipu', 'hunyuan', 'openrouter', etc.)
+ * @param {boolean} resetCounter 是否重置计数器
+ * @returns {{text: string, hasBufferedContent: boolean}} 转换后的文本和是否有内容被缓冲
+ */
+export function smartLinkConverter(
+  text: string,
+  providerType: string = 'openai',
+  resetCounter: boolean = false,
+  webSearchResults?: WebSearchResponse
+): { text: string; hasBufferedContent: boolean } {
+  if (webSearchResults) {
+    const webSearch = webSearchResults.results
+    switch (webSearchResults.source) {
+      case WebSearchSource.PERPLEXITY: {
+        text = completionPerplexityLinks(text, webSearch as any[])
+        break
+      }
+    }
+  }
+  // 检测文本中的引用模式
+  const references = extractWebSearchReferences(text)
+
+  if (references.length === 0) {
+    // 如果没有特定的引用模式，使用通用转换
+    return convertLinks(text, resetCounter)
+  }
+
+  // 根据检测到的引用模式选择合适的转换器
+  const hasZhipuPattern = references.some((ref) => ref.placeholder.includes('ref_'))
+
+  if (hasZhipuPattern) {
+    return {
+      text: convertLinksToZhipu(text, resetCounter),
+      hasBufferedContent: false
+    }
+  } else if (providerType === 'openrouter') {
+    return {
+      text: convertLinksToOpenRouter(text, resetCounter),
+      hasBufferedContent: false
+    }
+  } else {
+    return convertLinks(text, resetCounter)
+  }
+}
+
+/**
+ * 强制返回buffer中的所有内容，用于流结束时清空缓冲区
+ * @returns {string} buffer中剩余的所有内容
+ */
+export function flushLinkConverterBuffer(): string {
+  const remainingBuffer = buffer
+  buffer = ''
+  return remainingBuffer
 }

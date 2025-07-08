@@ -1,9 +1,10 @@
 import type { WebSearchResultBlock } from '@anthropic-ai/sdk/resources'
-import type { GroundingMetadata } from '@google/genai'
+import type { GenerateImagesConfig, GroundingMetadata, PersonGeneration } from '@google/genai'
 import type OpenAI from 'openai'
-import React from 'react'
-import { BuiltinTheme } from 'shiki'
+import type { CSSProperties } from 'react'
 
+export * from './file'
+import type { FileMetadata } from './file'
 import type { Message } from './newMessage'
 
 export type Assistant = {
@@ -26,7 +27,10 @@ export type Assistant = {
   mcpServers?: MCPServer[]
   knowledgeRecognition?: 'off' | 'on'
   regularPhrases?: QuickPhrase[] // Added for regular phrase
+  tags?: string[] // 助手标签
 }
+
+export type AssistantsSortType = 'tags' | 'list'
 
 export type AssistantMessage = {
   role: 'user' | 'assistant'
@@ -56,12 +60,11 @@ export type AssistantSettings = {
   maxTokens: number | undefined
   enableMaxTokens: boolean
   streamOutput: boolean
-  enableToolUse: boolean
-  hideMessages: boolean
   defaultModel?: Model
   customParameters?: AssistantSettingCustomParameters[]
   reasoning_effort?: ReasoningEffortOptions
   qwenThinkMode?: boolean
+  toolUseMode?: 'function' | 'prompt'
 }
 
 export type Agent = Omit<Assistant, 'model'> & {
@@ -80,13 +83,12 @@ export type LegacyMessage = {
   status: 'sending' | 'pending' | 'searching' | 'success' | 'paused' | 'error'
   modelId?: string
   model?: Model
-  files?: FileType[]
+  files?: FileMetadata[]
   images?: string[]
   usage?: Usage
   metrics?: Metrics
   knowledgeBaseIds?: string[]
   type: 'text' | '@' | 'clear'
-  isPreset?: boolean
   mentions?: Model[]
   askId?: string
   useful?: boolean
@@ -159,12 +161,30 @@ export type Provider = {
   isAuthed?: boolean
   rateLimit?: number
   isNotSupportArrayContent?: boolean
+  isVertex?: boolean
   notes?: string
+  extra_headers?: Record<string, string>
 }
 
-export type ProviderType = 'openai' | 'openai-response' | 'anthropic' | 'gemini' | 'qwenlm' | 'azure-openai'
+export type ProviderType =
+  | 'openai'
+  | 'openai-response'
+  | 'anthropic'
+  | 'gemini'
+  | 'qwenlm'
+  | 'azure-openai'
+  | 'vertexai'
+  | 'mistral'
 
 export type ModelType = 'text' | 'vision' | 'embedding' | 'reasoning' | 'function_calling' | 'web_search'
+
+export type EndpointType = 'openai' | 'openai-response' | 'anthropic' | 'gemini' | 'jina-rerank'
+
+export type ModelPricing = {
+  input_per_million_tokens: number
+  output_per_million_tokens: number
+  currencySymbol?: string
+}
 
 export type Model = {
   id: string
@@ -174,6 +194,9 @@ export type Model = {
   owned_by?: string
   description?: string
   type?: ModelType[]
+  pricing?: ModelPricing
+  endpoint_type?: EndpointType
+  supported_endpoint_types?: EndpointType[]
 }
 
 export type Suggestion = {
@@ -183,8 +206,10 @@ export type Suggestion = {
 export type PaintingParams = {
   id: string
   urls: string[]
-  files: FileType[]
+  files: FileMetadata[]
 }
+
+export type PaintingProvider = 'aihubmix' | 'silicon' | 'dmxapi'
 
 export interface Painting extends PaintingParams {
   model?: string
@@ -207,17 +232,26 @@ export interface GeneratePainting extends PaintingParams {
   seed?: string
   negativePrompt?: string
   magicPromptOption?: boolean
+  renderingSpeed?: string
+  quality?: string
+  moderation?: string
+  n?: number
+  size?: string
+  background?: string
+  personGeneration?: GenerateImagesConfig['personGeneration']
+  numberOfImages?: number
 }
 
 export interface EditPainting extends PaintingParams {
   imageFile: string
-  mask: FileType
+  mask: FileMetadata
   model: string
   prompt: string
   numImages?: number
   styleType?: string
   seed?: string
   magicPromptOption?: boolean
+  renderingSpeed?: string
 }
 
 export interface RemixPainting extends PaintingParams {
@@ -231,6 +265,7 @@ export interface RemixPainting extends PaintingParams {
   seed?: string
   negativePrompt?: string
   magicPromptOption?: boolean
+  renderingSpeed?: string
 }
 
 export interface ScalePainting extends PaintingParams {
@@ -241,9 +276,39 @@ export interface ScalePainting extends PaintingParams {
   numImages?: number
   seed?: string
   magicPromptOption?: boolean
+  renderingSpeed?: string
 }
 
-export type PaintingAction = Partial<GeneratePainting & RemixPainting & EditPainting & ScalePainting> & PaintingParams
+export enum generationModeType {
+  GENERATION = 'generation',
+  EDIT = 'edit',
+  MERGE = 'merge'
+}
+
+export interface DmxapiPainting extends PaintingParams {
+  model?: string
+  prompt?: string
+  n?: number
+  aspect_ratio?: string
+  image_size?: string
+  seed?: string
+  style_type?: string
+  autoCreate?: boolean
+  generationMode?: generationModeType
+}
+
+export interface TokenFluxPainting extends PaintingParams {
+  generationId?: string
+  model?: string
+  prompt?: string
+  inputParams?: Record<string, any>
+  status?: 'starting' | 'processing' | 'succeeded' | 'failed' | 'cancelled'
+}
+
+export type PaintingAction = Partial<
+  GeneratePainting & RemixPainting & EditPainting & ScalePainting & DmxapiPainting & TokenFluxPainting
+> &
+  PaintingParams
 
 export interface PaintingsState {
   paintings: Painting[]
@@ -251,6 +316,8 @@ export interface PaintingsState {
   remix: Partial<RemixPainting> & PaintingParams[]
   edit: Partial<EditPainting> & PaintingParams[]
   upscale: Partial<ScalePainting> & PaintingParams[]
+  DMXAPIPaintings: DmxapiPainting[]
+  tokenFluxPaintings: TokenFluxPainting[]
 }
 
 export type MinAppType = {
@@ -260,60 +327,30 @@ export type MinAppType = {
   url: string
   bodered?: boolean
   background?: string
-  style?: React.CSSProperties
+  style?: CSSProperties
   addTime?: string
   type?: 'Custom' | 'Default' // Added the 'type' property
-}
-
-export interface FileType {
-  id: string
-  name: string
-  origin_name: string
-  path: string
-  size: number
-  ext: string
-  type: FileTypes
-  created_at: string
-  count: number
-  tokens?: number
-}
-
-export enum FileTypes {
-  IMAGE = 'image',
-  VIDEO = 'video',
-  AUDIO = 'audio',
-  TEXT = 'text',
-  DOCUMENT = 'document',
-  OTHER = 'other'
 }
 
 export enum ThemeMode {
   light = 'light',
   dark = 'dark',
-  auto = 'auto'
+  system = 'system'
 }
 
 export type LanguageVarious = 'zh-CN' | 'zh-TW' | 'el-GR' | 'en-US' | 'es-ES' | 'fr-FR' | 'ja-JP' | 'pt-PT' | 'ru-RU'
 
-export type TranslateLanguageVarious =
-  | 'chinese'
-  | 'chinese-traditional'
-  | 'greek'
-  | 'english'
-  | 'spanish'
-  | 'french'
-  | 'japanese'
-  | 'portuguese'
-  | 'russian'
+export type TranslateLanguageVarious = LanguageCode
 
-export type CodeStyleVarious = BuiltinTheme | 'auto'
+export type CodeStyleVarious = 'auto' | string
 
 export type WebDavConfig = {
   webdavHost: string
-  webdavUser: string
-  webdavPass: string
-  webdavPath: string
+  webdavUser?: string
+  webdavPass?: string
+  webdavPath?: string
   fileName?: string
+  skipBackupFile?: boolean
 }
 
 export type AppInfo = {
@@ -327,6 +364,7 @@ export type AppInfo = {
   logsPath: string
   arch: string
   isPortable: boolean
+  installPath: string
 }
 
 export interface Shortcut {
@@ -347,7 +385,7 @@ export type KnowledgeItem = {
   uniqueId?: string
   uniqueIds?: string[]
   type: KnowledgeItemType
-  content: string | FileType
+  content: string | FileMetadata
   remark?: string
   created_at: number
   updated_at: number
@@ -355,13 +393,14 @@ export type KnowledgeItem = {
   processingProgress?: number
   processingError?: string
   retryCount?: number
+  isPreprocessed?: boolean
 }
 
 export interface KnowledgeBase {
   id: string
   name: string
   model: Model
-  dimensions: number
+  dimensions?: number
   description?: string
   items: KnowledgeItem[]
   created_at: number
@@ -372,13 +411,19 @@ export interface KnowledgeBase {
   chunkOverlap?: number
   threshold?: number
   rerankModel?: Model
-  topN?: number
+  // topN?: number
+  // preprocessing?: boolean
+  preprocessOrOcrProvider?: {
+    type: 'preprocess' | 'ocr'
+    provider: PreprocessProvider | OcrProvider
+  }
 }
 
 export type KnowledgeBaseParams = {
   id: string
   model: string
-  dimensions: number
+  provider: string
+  dimensions?: number
   apiKey: string
   apiVersion?: string
   baseURL: string
@@ -388,7 +433,32 @@ export type KnowledgeBaseParams = {
   rerankBaseURL?: string
   rerankModel?: string
   rerankModelProvider?: string
-  topN?: number
+  documentCount?: number
+  // preprocessing?: boolean
+  preprocessOrOcrProvider?: {
+    type: 'preprocess' | 'ocr'
+    provider: PreprocessProvider | OcrProvider
+  }
+}
+
+export interface PreprocessProvider {
+  id: string
+  name: string
+  apiKey?: string
+  apiHost?: string
+  model?: string
+  options?: any
+  quota?: number
+}
+
+export interface OcrProvider {
+  id: string
+  name: string
+  apiKey?: string
+  apiHost?: string
+  model?: string
+  options?: any
+  quota?: number
 }
 
 export type GenerateImageParams = {
@@ -398,10 +468,11 @@ export type GenerateImageParams = {
   imageSize: string
   batchSize: number
   seed?: string
-  numInferenceSteps: number
-  guidanceScale: number
+  numInferenceSteps?: number
+  guidanceScale?: number
   signal?: AbortSignal
   promptEnhancement?: boolean
+  personGeneration?: PersonGeneration
 }
 
 export type GenerateImageResponse = {
@@ -409,12 +480,41 @@ export type GenerateImageResponse = {
   images: string[]
 }
 
+export type LanguageCode =
+  | 'en-us'
+  | 'zh-cn'
+  | 'zh-tw'
+  | 'ja-jp'
+  | 'ko-kr'
+  | 'fr-fr'
+  | 'de-de'
+  | 'it-it'
+  | 'es-es'
+  | 'pt-pt'
+  | 'ru-ru'
+  | 'pl-pl'
+  | 'ar-ar'
+  | 'tr-tr'
+  | 'th-th'
+  | 'vi-vn'
+  | 'id-id'
+  | 'ur-pk'
+  | 'ms-my'
+
+// langCode应当能够唯一确认一种语言
+export type Language = {
+  value: string
+  langCode: LanguageCode
+  label: () => string
+  emoji: string
+}
+
 export interface TranslateHistory {
   id: string
   sourceText: string
   targetText: string
-  sourceLanguage: string
-  targetLanguage: string
+  sourceLanguage: LanguageCode
+  targetLanguage: LanguageCode
   createdAt: string
 }
 
@@ -436,7 +536,6 @@ export type WebSearchProvider = {
   url?: string
   basicAuthUsername?: string
   basicAuthPassword?: string
-  contentLimit?: number
   usingBrowser?: boolean
 }
 
@@ -469,12 +568,21 @@ export enum WebSearchSource {
   PERPLEXITY = 'perplexity',
   QWEN = 'qwen',
   HUNYUAN = 'hunyuan',
-  ZHIPU = 'zhipu'
+  ZHIPU = 'zhipu',
+  GROK = 'grok'
 }
 
 export type WebSearchResponse = {
-  results: WebSearchResults
+  results?: WebSearchResults
   source: WebSearchSource
+}
+
+export type WebSearchPhase = 'default' | 'fetch_complete' | 'rag' | 'rag_complete' | 'rag_failed' | 'cutoff'
+
+export type WebSearchStatus = {
+  phase: WebSearchPhase
+  countBefore?: number
+  countAfter?: number
 }
 
 export type KnowledgeReference = {
@@ -482,7 +590,7 @@ export type KnowledgeReference = {
   content: string
   sourceUrl: string
   type: KnowledgeItemType
-  file?: FileType
+  file?: FileMetadata
 }
 
 export type MCPArgType = 'string' | 'list' | 'number'
@@ -571,6 +679,8 @@ export interface GetMCPPromptResponse {
 
 export interface MCPConfig {
   servers: MCPServer[]
+  isUvInstalled: boolean
+  isBunInstalled: boolean
 }
 
 interface BaseToolResponse {
@@ -638,9 +748,12 @@ export interface QuickPhrase {
 export interface Citation {
   number: number
   url: string
-  hostname: string
   title?: string
+  hostname?: string
   content?: string
+  showFavicon?: boolean
+  type?: string
+  metadata?: Record<string, any>
 }
 
 export type MathEngine = 'KaTeX' | 'MathJax' | 'none'
@@ -653,3 +766,22 @@ export interface StoreSyncAction {
     source?: string
   }
 }
+
+export type OpenAISummaryText = 'auto' | 'concise' | 'detailed' | 'off'
+export type OpenAIServiceTier = 'auto' | 'default' | 'flex'
+
+export type S3Config = {
+  endpoint: string
+  region: string
+  bucket: string
+  accessKeyId: string
+  secretAccessKey: string
+  root?: string
+  fileName?: string
+  skipBackupFile: boolean
+  autoSync: boolean
+  syncInterval: number
+  maxBackups: number
+}
+
+export type { Message } from './newMessage'

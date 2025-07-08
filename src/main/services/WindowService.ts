@@ -1,8 +1,10 @@
+// just import the themeService to ensure the theme is initialized
+import './ThemeService'
+
 import { is } from '@electron-toolkit/utils'
 import { isDev, isLinux, isMac, isWin } from '@main/constant'
 import { getFilesDir } from '@main/utils/file'
 import { IpcChannel } from '@shared/IpcChannel'
-import { ThemeMode } from '@types'
 import { app, BrowserWindow, nativeTheme, shell } from 'electron'
 import Logger from 'electron-log'
 import windowStateKeeper from 'electron-window-state'
@@ -39,29 +41,22 @@ export class WindowService {
     }
 
     const mainWindowState = windowStateKeeper({
-      defaultWidth: 1080,
-      defaultHeight: 670,
+      defaultWidth: 960,
+      defaultHeight: 600,
       fullScreen: false,
       maximize: false
     })
-
-    const theme = configManager.getTheme()
-    if (theme === ThemeMode.auto) {
-      nativeTheme.themeSource = 'system'
-    } else {
-      nativeTheme.themeSource = theme
-    }
 
     this.mainWindow = new BrowserWindow({
       x: mainWindowState.x,
       y: mainWindowState.y,
       width: mainWindowState.width,
       height: mainWindowState.height,
-      minWidth: 1080,
+      minWidth: 960,
       minHeight: 600,
       show: false,
       autoHideMenuBar: true,
-      transparent: isMac,
+      transparent: false,
       vibrancy: 'sidebar',
       visualEffectState: 'active',
       titleBarStyle: 'hidden',
@@ -75,7 +70,9 @@ export class WindowService {
         sandbox: false,
         webSecurity: false,
         webviewTag: true,
-        allowRunningInsecureContent: true
+        allowRunningInsecureContent: true,
+        zoomFactor: configManager.getZoomFactor(),
+        backgroundThrottling: false
       }
     })
 
@@ -98,11 +95,24 @@ export class WindowService {
 
     this.setupMaximize(mainWindow, mainWindowState.isMaximized)
     this.setupContextMenu(mainWindow)
+    this.setupSpellCheck(mainWindow)
     this.setupWindowEvents(mainWindow)
     this.setupWebContentsHandlers(mainWindow)
     this.setupWindowLifecycleEvents(mainWindow)
     this.setupMainWindowMonitor(mainWindow)
     this.loadMainWindowContent(mainWindow)
+  }
+
+  private setupSpellCheck(mainWindow: BrowserWindow) {
+    const enableSpellCheck = configManager.get('enableSpellCheck', false)
+    if (enableSpellCheck) {
+      try {
+        const spellCheckLanguages = configManager.get('spellCheckLanguages', []) as string[]
+        spellCheckLanguages.length > 0 && mainWindow.webContents.session.setSpellCheckerLanguages(spellCheckLanguages)
+      } catch (error) {
+        Logger.error('Failed to set spell check languages:', error as Error)
+      }
+    }
   }
 
   private setupMainWindowMonitor(mainWindow: BrowserWindow) {
@@ -119,12 +129,6 @@ export class WindowService {
         app.exit(1)
       }
     })
-
-    mainWindow.webContents.on('unresponsive', () => {
-      // 在升级到electron 34后，可以获取具体js stack trace,目前只打个日志监控下
-      // https://www.electronjs.org/blog/electron-34-0#unresponsive-renderer-javascript-call-stacks
-      Logger.error('Renderer process unresponsive')
-    })
   }
 
   private setupMaximize(mainWindow: BrowserWindow, isMaximized: boolean) {
@@ -139,9 +143,10 @@ export class WindowService {
   }
 
   private setupContextMenu(mainWindow: BrowserWindow) {
-    contextMenu.contextMenu(mainWindow)
-    app.on('browser-window-created', (_, win) => {
-      contextMenu.contextMenu(win)
+    contextMenu.contextMenu(mainWindow.webContents)
+    // setup context menu for all webviews like miniapp
+    app.on('web-contents-created', (_, webContents) => {
+      contextMenu.contextMenu(webContents)
     })
 
     // Dangerous API
@@ -184,6 +189,12 @@ export class WindowService {
       mainWindow.webContents.setZoomFactor(configManager.getZoomFactor())
     })
 
+    // set the zoom factor again when the window is going to restore
+    // minimize and restore will cause zoom reset
+    mainWindow.on('restore', () => {
+      mainWindow.webContents.setZoomFactor(configManager.getZoomFactor())
+    })
+
     // ARCH: as `will-resize` is only for Win & Mac,
     // linux has the same problem, use `resize` listener instead
     // but `resize` will fliker the ui
@@ -198,10 +209,21 @@ export class WindowService {
       // 当按下Escape键且窗口处于全屏状态时退出全屏
       if (input.key === 'Escape' && !input.alt && !input.control && !input.meta && !input.shift) {
         if (mainWindow.isFullScreen()) {
-          event.preventDefault()
-          mainWindow.setFullScreen(false)
+          // 获取 shortcuts 配置
+          const shortcuts = configManager.getShortcuts()
+          const exitFullscreenShortcut = shortcuts.find((s) => s.key === 'exit_fullscreen')
+          if (exitFullscreenShortcut == undefined) {
+            mainWindow.setFullScreen(false)
+            return
+          }
+          if (exitFullscreenShortcut?.enabled) {
+            event.preventDefault()
+            mainWindow.setFullScreen(false)
+            return
+          }
         }
       }
+      return
     })
   }
 
@@ -306,7 +328,7 @@ export class WindowService {
 
       /**
        * 上述逻辑以下:
-       * win/linux: 是“开启托盘+设置关闭时最小化到托盘”的情况
+       * win/linux: 是"开启托盘+设置关闭时最小化到托盘"的情况
        * mac: 任何情况都会到这里，因此需要单独处理mac
        */
 
@@ -528,6 +550,25 @@ export class WindowService {
 
   public setPinMiniWindow(isPinned) {
     this.isPinnedMiniWindow = isPinned
+  }
+
+  /**
+   * 引用文本到主窗口
+   * @param text 原始文本（未格式化）
+   */
+  public quoteToMainWindow(text: string): void {
+    try {
+      this.showMainWindow()
+
+      const mainWindow = this.getMainWindow()
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        setTimeout(() => {
+          mainWindow.webContents.send(IpcChannel.App_QuoteToMain, text)
+        }, 100)
+      }
+    } catch (error) {
+      Logger.error('Failed to quote to main window:', error as Error)
+    }
   }
 }
 

@@ -4,8 +4,8 @@ import * as htmlToImage from 'html-to-image'
 
 /**
  * 将文件转换为 Base64 编码的字符串或 ArrayBuffer。
- * @param file 要转换的文件
- * @returns Promise<string | ArrayBuffer | null> 转换后的 Base64 编码数据，如果出错则返回 null
+ * @param {File} file 要转换的文件
+ * @returns {Promise<string | ArrayBuffer | null>} 转换后的 Base64 编码数据，如果出错则返回 null
  */
 export const convertToBase64 = (file: File): Promise<string | ArrayBuffer | null> => {
   return new Promise((resolve, reject) => {
@@ -18,10 +18,10 @@ export const convertToBase64 = (file: File): Promise<string | ArrayBuffer | null
 
 /**
  * 压缩图像文件，限制最大大小和尺寸。
- * @param file 要压缩的图像文件
- * @returns Promise<File> 压缩后的图像文件
+ * @param {File} file 要压缩的图像文件
+ * @returns {Promise<File>} 压缩后的图像文件
  */
-export const compressImage = async (file: File) => {
+export const compressImage = async (file: File): Promise<File> => {
   return await imageCompression(file, {
     maxSizeMB: 1,
     maxWidthOrHeight: 300,
@@ -67,6 +67,9 @@ export const captureScrollableDiv = async (divRef: React.RefObject<HTMLDivElemen
       }
 
       const originalScrollTop = div.scrollTop
+
+      // Hide scrollbars during capture
+      div.classList.add('hide-scrollbar')
 
       // Modify styles to show full content
       div.style.height = 'auto'
@@ -134,6 +137,9 @@ export const captureScrollableDiv = async (divRef: React.RefObject<HTMLDivElemen
     } catch (error) {
       console.error('Error capturing scrollable div:', error)
       throw error
+    } finally {
+      // Remove scrollbar hiding class
+      divRef.current?.classList.remove('hide-scrollbar')
     }
   }
 

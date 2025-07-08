@@ -1,15 +1,32 @@
 import store from '@renderer/store'
-import { messageBlocksSelectors } from '@renderer/store/messageBlock'
+import { formatCitationsFromBlock, messageBlocksSelectors } from '@renderer/store/messageBlock'
+import { FileMetadata } from '@renderer/types'
 import type {
   CitationMessageBlock,
   FileMessageBlock,
   ImageMessageBlock,
   MainTextMessageBlock,
   Message,
+  MessageBlock,
   ThinkingMessageBlock,
   TranslationMessageBlock
 } from '@renderer/types/newMessage'
 import { MessageBlockType } from '@renderer/types/newMessage'
+
+export const findAllBlocks = (message: Message): MessageBlock[] => {
+  if (!message || !message.blocks || message.blocks.length === 0) {
+    return []
+  }
+  const state = store.getState()
+  const allBlocks: MessageBlock[] = []
+  for (const blockId of message.blocks) {
+    const block = messageBlocksSelectors.selectById(state, blockId)
+    if (block) {
+      allBlocks.push(block)
+    }
+  }
+  return allBlocks
+}
 
 /**
  * Finds all MainTextMessageBlocks associated with a given message, in order.
@@ -111,15 +128,38 @@ export const getThinkingContent = (message: Message): string => {
   return thinkingBlocks.map((block) => block.content).join('\n\n')
 }
 
+export const getCitationContent = (message: Message): string => {
+  const citationBlocks = findCitationBlocks(message)
+  return citationBlocks
+    .map((block) => formatCitationsFromBlock(block))
+    .flat()
+    .map(
+      (citation) =>
+        `[${citation.number}] [${citation.title || citation.url.slice(0, 1999)}](${citation.url.slice(0, 1999)})`
+    )
+    .join('\n\n')
+}
+
 /**
- * Gets the knowledgeBaseIds array from the *first* MainTextMessageBlock of a message.
- * Note: Assumes knowledgeBaseIds are only relevant on the first text block, adjust if needed.
+ * Gets the file content from all FileMessageBlocks and ImageMessageBlocks of a message.
  * @param message - The message object.
- * @returns The knowledgeBaseIds array or undefined if not found.
+ * @returns The file content or an empty string if no file blocks are found.
  */
-export const getKnowledgeBaseIds = (message: Message): string[] | undefined => {
-  const firstTextBlock = findMainTextBlocks(message)
-  return firstTextBlock?.flatMap((block) => block.knowledgeBaseIds).filter((id): id is string => Boolean(id))
+export const getFileContent = (message: Message): FileMetadata[] => {
+  const files: FileMetadata[] = []
+  const fileBlocks = findFileBlocks(message)
+  for (const block of fileBlocks) {
+    if (block.file) {
+      files.push(block.file)
+    }
+  }
+  const imageBlocks = findImageBlocks(message)
+  for (const block of imageBlocks) {
+    if (block.file) {
+      files.push(block.file)
+    }
+  }
+  return files
 }
 
 /**
@@ -155,11 +195,48 @@ export const findTranslationBlocks = (message: Message): TranslationMessageBlock
   const translationBlocks: TranslationMessageBlock[] = []
   for (const blockId of message.blocks) {
     const block = messageBlocksSelectors.selectById(state, blockId)
-    if (block && block.type === 'translation') {
+    if (block && block.type === MessageBlockType.TRANSLATION) {
       translationBlocks.push(block as TranslationMessageBlock)
     }
   }
   return translationBlocks
+}
+
+/**
+ * 构造带工具调用结果的消息内容
+ * @param blocks
+ * @returns
+ */
+export function getContentWithTools(message: Message) {
+  const blocks = findAllBlocks(message)
+  let constructedContent = ''
+  for (const block of blocks) {
+    if (block.type === MessageBlockType.MAIN_TEXT || block.type === MessageBlockType.TOOL) {
+      if (block.type === MessageBlockType.MAIN_TEXT) {
+        constructedContent += block.content
+      } else if (block.type === MessageBlockType.TOOL) {
+        // 如果是工具调用结果，为其添加文本消息
+        let resultString =
+          '\n\nAssistant called a tool.\nTool Name:' +
+          block.metadata?.rawMcpToolResponse?.tool.name +
+          '\nTool call result: \n```json\n'
+        try {
+          resultString += JSON.stringify(
+            {
+              params: block.metadata?.rawMcpToolResponse?.arguments,
+              response: block.metadata?.rawMcpToolResponse?.response
+            },
+            null,
+            2
+          )
+        } catch (e) {
+          resultString += 'Invalid Result'
+        }
+        constructedContent += resultString + '\n```\n\n'
+      }
+    }
+  }
+  return constructedContent
 }
 
 /**

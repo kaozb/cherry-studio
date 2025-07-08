@@ -1,8 +1,7 @@
 import { WebSearchResultBlock } from '@anthropic-ai/sdk/resources'
 import type { GroundingMetadata } from '@google/genai'
 import { createEntityAdapter, createSelector, createSlice, type PayloadAction } from '@reduxjs/toolkit'
-import type { Citation } from '@renderer/pages/home/Messages/CitationsList'
-import { WebSearchProviderResponse, WebSearchSource } from '@renderer/types'
+import { Citation, WebSearchProviderResponse, WebSearchSource } from '@renderer/types'
 import type { CitationMessageBlock, MessageBlock } from '@renderer/types/newMessage'
 import { MessageBlockType } from '@renderer/types/newMessage'
 import type OpenAI from 'openai'
@@ -81,7 +80,7 @@ const selectBlockEntityById = (state: RootState, blockId: string | undefined) =>
   blockId ? messageBlocksSelectors.selectById(state, blockId) : undefined // Use adapter selector
 
 // --- Centralized Citation Formatting Logic ---
-const formatCitationsFromBlock = (block: CitationMessageBlock | undefined): Citation[] => {
+export const formatCitationsFromBlock = (block: CitationMessageBlock | undefined): Citation[] => {
   if (!block) return []
 
   let formattedCitations: Citation[] = []
@@ -160,8 +159,19 @@ const formatCitationsFromBlock = (block: CitationMessageBlock | undefined): Cita
             }
           }) || []
         break
+      case WebSearchSource.PERPLEXITY: {
+        formattedCitations =
+          (block.response.results as any[])?.map((result, index) => ({
+            number: index + 1,
+            url: result.url || result, // 兼容旧数据
+            title: result.title || new URL(result).hostname, // 兼容旧数据
+            showFavicon: true,
+            type: 'websearch'
+          })) || []
+        break
+      }
+      case WebSearchSource.GROK:
       case WebSearchSource.OPENROUTER:
-      case WebSearchSource.PERPLEXITY:
         formattedCitations =
           (block.response.results as any[])?.map((url, index) => {
             try {
@@ -236,10 +246,11 @@ const formatCitationsFromBlock = (block: CitationMessageBlock | undefined): Cita
       })
     )
   }
-  // 4. Deduplicate by URL and Renumber Sequentially
+  // 4. Deduplicate non-knowledge citations by URL and Renumber Sequentially
   const urlSet = new Set<string>()
   return formattedCitations
     .filter((citation) => {
+      if (citation.type === 'knowledge') return true
       if (!citation.url || urlSet.has(citation.url)) return false
       urlSet.add(citation.url)
       return true

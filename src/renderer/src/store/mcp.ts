@@ -3,7 +3,9 @@ import Logger from '@renderer/config/logger'
 import type { MCPConfig, MCPServer } from '@renderer/types'
 
 export const initialState: MCPConfig = {
-  servers: []
+  servers: [],
+  isUvInstalled: true,
+  isBunInstalled: true
 }
 
 const mcpSlice = createSlice({
@@ -30,6 +32,12 @@ const mcpSlice = createSlice({
       if (index !== -1) {
         state.servers[index].isActive = action.payload.isActive
       }
+    },
+    setIsUvInstalled: (state, action: PayloadAction<boolean>) => {
+      state.isUvInstalled = action.payload
+    },
+    setIsBunInstalled: (state, action: PayloadAction<boolean>) => {
+      state.isBunInstalled = action.payload
     }
   },
   selectors: {
@@ -40,7 +48,15 @@ const mcpSlice = createSlice({
   }
 })
 
-export const { setMCPServers, addMCPServer, updateMCPServer, deleteMCPServer, setMCPServerActive } = mcpSlice.actions
+export const {
+  setMCPServers,
+  addMCPServer,
+  updateMCPServer,
+  deleteMCPServer,
+  setMCPServerActive,
+  setIsBunInstalled,
+  setIsUvInstalled
+} = mcpSlice.actions
 
 // Export the generated selectors from the slice
 export const { getActiveServers, getAllServers } = mcpSlice.selectors
@@ -108,6 +124,7 @@ export const builtinMCPServers: MCPServer[] = [
     name: '@cherry/filesystem',
     type: 'inMemory',
     description: '实现文件系统操作的模型上下文协议（MCP）的 Node.js 服务器',
+    args: ['/Users/username/Desktop', '/path/to/other/allowed/dir'],
     isActive: false,
     provider: 'CherryAI'
   },
@@ -120,6 +137,14 @@ export const builtinMCPServers: MCPServer[] = [
     env: {
       DIFY_KEY: 'YOUR_DIFY_KEY'
     },
+    provider: 'CherryAI'
+  },
+  {
+    id: nanoid(),
+    name: '@cherry/python',
+    type: 'inMemory',
+    description: '在安全的沙盒环境中执行 Python 代码。使用 Pyodide 运行 Python，支持大多数标准库和科学计算包',
+    isActive: false,
     provider: 'CherryAI'
   }
 ]
