@@ -1,4 +1,4 @@
-import { CheckOutlined, EditOutlined, QuestionCircleOutlined, SyncOutlined } from '@ant-design/icons'
+import { CheckOutlined, EditOutlined, MenuOutlined, QuestionCircleOutlined, SyncOutlined } from '@ant-design/icons'
 import ObsidianExportPopup from '@renderer/components/Popups/ObsidianExportPopup'
 import SelectModelPopup from '@renderer/components/Popups/SelectModelPopup'
 import { isVisionModel } from '@renderer/config/models'
@@ -410,19 +410,32 @@ const MessageMenubar: FC<Props> = (props) => {
           </ActionButton>
         </Tooltip>
       )}
-      {message.role === 'user' && (
         <Tooltip title={t('common.edit')} mouseEnterDelay={0.8}>
           <ActionButton className="message-action-button" onClick={onEdit} $softHoverBg={softHoverBg}>
             <EditOutlined />
           </ActionButton>
         </Tooltip>
-      )}
       <Tooltip title={t('common.copy')} mouseEnterDelay={0.8}>
         <ActionButton className="message-action-button" onClick={onCopy} $softHoverBg={softHoverBg}>
           {!copied && <Copy size={16} />}
           {copied && <CheckOutlined style={{ color: 'var(--color-primary)' }} />}
         </ActionButton>
       </Tooltip>
+       {exportMenuOptions.notion && (
+            <Tooltip title={t('chat.topics.export.notion')} mouseEnterDelay={0.8}>
+              <ActionButton
+                className="message-action-button"
+                onClick={async () => {
+                const title = await getMessageTitle(message);
+				const markdown = messageToMarkdown(message);
+				exportMessageToNotion(title, markdown, message);
+                }}
+              >
+                <i className="iconfont icon-notion" style={{ fontSize: 16 }} />
+              </ActionButton>
+            </Tooltip>
+          )}
+
       {isAssistantMessage && (
         <Popconfirm
           title={t('message.regenerate.confirm')}
