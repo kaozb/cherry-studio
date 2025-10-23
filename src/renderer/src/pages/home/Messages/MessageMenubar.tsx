@@ -669,10 +669,6 @@ const buttonRenderers: Record<MessageMenubarButtonId, MessageMenubarButtonRender
     )
   },
   'user-edit': ({ message, onEdit, softHoverBg, t }) => {
-    if (message.role !== 'user') {
-      return null
-    }
-
     return (
       <Tooltip title={t('common.edit')} mouseEnterDelay={0.8}>
         <ActionButton className="message-action-button" onClick={onEdit} $softHoverBg={softHoverBg}>

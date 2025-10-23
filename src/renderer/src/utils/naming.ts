@@ -34,7 +34,7 @@ export const getDefaultGroupName = (id: string, provider?: string): string => {
   // 第一类分隔规则
   for (const delimiter of firstDelimiters) {
     if (str.includes(delimiter)) {
-      return str.split(delimiter)[0]
+      return "Models"
     }
   }
 
@@ -42,11 +42,11 @@ export const getDefaultGroupName = (id: string, provider?: string): string => {
   for (const delimiter of secondDelimiters) {
     if (str.includes(delimiter)) {
       const parts = str.split(delimiter)
-      return parts.length > 1 ? parts[0] + '-' + parts[1] : parts[0]
+      return "Models"
     }
   }
 
-  return str
+  return "Models"
 }
 
 /**
